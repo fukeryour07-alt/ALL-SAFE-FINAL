@@ -486,32 +486,34 @@ export default function LiveMap() {
 
                         {/* Globe render */}
                         <div ref={containerRef} style={{ width: '100%', height: dimensions.height }}>
-                            <Globe
-                                ref={globeRef}
-                                onGlobeReady={() => setGlobeReady(true)}
-                                width={dimensions.width}
-                                height={dimensions.height}
-                                globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
-                                bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-                                atmosphereColor="#00f5ff"
-                                atmosphereAltitude={0.12}
-                                hexPolygonsData={countriesData}
-                                hexPolygonResolution={3}
-                                hexPolygonMargin={0.7}
-                                hexPolygonColor={() => 'rgba(0,245,255,0.02)'}
-                                arcsData={arcsData}
-                                arcColor={d => d.color}
-                                arcDashLength={d => d.dashLen ?? 0.7}
-                                arcDashGap={d => d.dashGap ?? 0.2}
-                                arcDashAnimateTime={d => d.animTime ?? 2000}
-                                arcStroke={d => d.stroke ?? 0.8}
-                                arcAltitude={d => d.altitude ?? 0.3}
-                                ringsData={ringsData}
-                                ringColor={d => `${d.color}cc`}
-                                ringMaxRadius={d => d.maxR ?? 4}
-                                ringPropagationSpeed={d => d.speed ?? 2}
-                                ringRepeatPeriod={d => d.repeat ?? 800}
-                            />
+                            {useMemo(() => (
+                                <Globe
+                                    ref={globeRef}
+                                    onGlobeReady={() => setGlobeReady(true)}
+                                    width={dimensions.width}
+                                    height={dimensions.height}
+                                    globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+                                    bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                                    atmosphereColor="#00f5ff"
+                                    atmosphereAltitude={0.12}
+                                    hexPolygonsData={countriesData}
+                                    hexPolygonResolution={3}
+                                    hexPolygonMargin={0.7}
+                                    hexPolygonColor={() => 'rgba(0,245,255,0.02)'}
+                                    arcsData={arcsData}
+                                    arcColor={d => d.color}
+                                    arcDashLength={d => d.dashLen ?? 0.7}
+                                    arcDashGap={d => d.dashGap ?? 0.2}
+                                    arcDashAnimateTime={d => d.animTime ?? 2000}
+                                    arcStroke={d => d.stroke ?? 0.8}
+                                    arcAltitude={d => d.altitude ?? 0.3}
+                                    ringsData={ringsData}
+                                    ringColor={d => `${d.color}cc`}
+                                    ringMaxRadius={d => d.maxR ?? 4}
+                                    ringPropagationSpeed={d => d.speed ?? 2}
+                                    ringRepeatPeriod={d => d.repeat ?? 800}
+                                />
+                            ), [dimensions.width, dimensions.height, countriesData, arcsData, ringsData])}
                         </div>
                     </div>
 
