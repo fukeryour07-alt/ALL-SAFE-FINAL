@@ -767,7 +767,7 @@ const InboxScannerContent = () => {
 
 /* ─── Wrapped Export ─────────────────────────────────────────────────────── */
 export default function InboxScanner() {
-    const CLIENT_ID = "959307556734-bs9vcm29194c97hvjg4uf1olhdi6c4ba.apps.googleusercontent.com";
+    const CLIENT_ID = "551794594394-0qprqvo2qq949tmk1lkrmcusrgpoqblk.apps.googleusercontent.com";
     return (
         <GoogleOAuthProvider clientId={CLIENT_ID}>
             <InboxScannerContent />
