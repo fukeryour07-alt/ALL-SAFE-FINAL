@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, ShieldAlert, Zap, Cpu, HardDrive, Shield,
@@ -202,11 +202,9 @@ export default function LiveMap() {
     const [stats, setStats] = useState({ total: 0, blocked: 0, critical: 0 });
     const [dimensions, setDimensions] = useState({ width: 900, height: 680 });
     const [countriesData, setCountriesData] = useState([]);
-    const [defconLevel, setDefconLevel] = useState(5);
     const [isGlobeReady, setGlobeReady] = useState(false);
     const [catCounts, setCatCounts] = useState({ RECON: 0, EXPLOIT: 0, MALWARE: 0, PHISHING: 0, NETWORK: 0, CREDENTIAL: 0 });
     const [filter, setFilter] = useState('ALL');
-    const [highlight, setHighlight] = useState(null); // last attack to flash
 
     // ── GeoJSON ───────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -228,14 +226,7 @@ export default function LiveMap() {
         }
     }, [isGlobeReady]);
 
-    // ── Efficient real-time data ingestion for 3D Globe ──────────────────────────
-    // Because react-globe.gl handles mutating prop arrays natively using ThreeJS without
-    // needing full React renders, we pass the data arrays directly to the ref when they update.
-    useEffect(() => {
-        if (!globeRef.current) return;
-        globeRef.current.arcsData(arcsData);
-        globeRef.current.ringsData(ringsData);
-    }, [arcsData, ringsData]);
+
 
     // ── Responsive resize ─────────────────────────────────────────────────────
     useEffect(() => {
@@ -253,6 +244,8 @@ export default function LiveMap() {
     }, []);
 
     // ── Real WebSockets feed (backend) ────────────────────────────────────────────
+    const messageQueue = useRef([]);
+
     useEffect(() => {
         let ws;
         let reconnectTimeout;
@@ -274,109 +267,140 @@ export default function LiveMap() {
                 try {
                     const data = JSON.parse(event.data);
                     if (data.type === 'NEW_ATTACK') {
-                        const threat = data.payload;
-
-                        let atk = ATTACK_TYPES.find(a => a.type.toLowerCase().includes((threat.type || '').toLowerCase()))
-                            || ATTACK_TYPES.find(a => a.category.toLowerCase().includes((threat.type || '').toLowerCase()))
-                            || ATTACK_TYPES[Math.floor(Math.random() * ATTACK_TYPES.length)];
-
-                        const isCritical = threat.risk_score > 80 || threat.threat_level === 'CRITICAL';
-                        const isHigh = threat.threat_level === 'HIGH';
-
-                        const src = {
-                            lat: threat.location?.lat || 0,
-                            lng: threat.location?.lng || 0,
-                            name: threat.location?.city && threat.location.city !== 'Unknown' ? threat.location.city : (threat.location?.country ? threat.location.country : 'Unknown Host'),
-                            country: threat.location?.country || ''
-                        };
-
-                        const tgtPool = TARGETS;
-                        const tgt = tgtPool[Math.floor(Math.random() * tgtPool.length)];
-
-                        const uid = Date.now() + Math.random();
-                        const dur = isCritical ? 3500 : isHigh ? 2800 : 2000;
-
-                        const arc = {
-                            id: uid,
-                            startLat: src.lat, startLng: src.lng,
-                            endLat: tgt.lat, endLng: tgt.lng,
-                            color: [`${atk.color}00`, atk.color],
-                            stroke: isCritical ? 2.5 : isHigh ? 1.5 : 0.8,
-                            dashLen: isCritical ? 0.9 : 0.5,
-                            dashGap: 0.1,
-                            animTime: dur,
-                            altitude: isCritical ? 0.55 : isHigh ? 0.4 : 0.25,
-                        };
-
-                        const ring = {
-                            id: uid,
-                            lat: tgt.lat, lng: tgt.lng,
-                            color: atk.color,
-                            maxR: isCritical ? 9 : isHigh ? 5.5 : 3.5,
-                            speed: isCritical ? 3.0 : 1.8,
-                            repeat: 700,
-                        };
-
-                        const blocked = threat.risk_score > 50;
-                        const log = {
-                            id: uid,
-                            srcName: src.name,
-                            srcCountry: src.country,
-                            tgtName: tgt.name,
-                            type: threat.type || atk.type,
-                            category: atk.category,
-                            severity: threat.threat_level || atk.severity,
-                            color: atk.color,
-                            isCritical,
-                            desc: threat.source ? `Threat intel from ${threat.source}` : atk.desc,
-                            srcIP: threat.ip || 'Unknown IP',
-                            cve: null,
-                            time: new Date(),
-                            blocked: blocked,
-                        };
-
-                        setArcsData(prev => [...prev.slice(-80), arc]);
-                        setRingsData(prev => [...prev.slice(-30), ring]);
-                        setAttackLogs(prev => [log, ...prev.slice(0, 49)]);
-                        setHighlight(uid);
-
-                        setStats(s => ({
-                            total: s.total + 1,
-                            blocked: s.blocked + (log.blocked ? 1 : 0),
-                            critical: s.critical + (isCritical ? 1 : 0),
-                        }));
-                        setCatCounts(prev => ({ ...prev, [atk.category]: (prev[atk.category] || 0) + 1 }));
-
-                        setTimeout(() => {
-                            setArcsData(prev => prev.filter(a => a.id !== uid));
-                            setRingsData(prev => prev.filter(r => r.id !== uid));
-                        }, dur + 1000);
+                        messageQueue.current.push(data.payload);
                     }
-                } catch (e) { console.error('WS Error:', e); }
+                } catch (e) {
+                    console.error('WS Error:', e);
+                }
             };
         };
 
         connect();
 
+        // ── Batch Processor (Runs twice a second to prevent React render thrashing) ──
+        const batchInterval = setInterval(() => {
+            if (messageQueue.current.length === 0) return;
+
+            const payloads = [...messageQueue.current];
+            messageQueue.current = []; // Clear queue
+
+            let newArcs = [];
+            let newRings = [];
+            let newLogs = [];
+            let statsDiff = { total: 0, blocked: 0, critical: 0 };
+            let catDiff = {};
+
+            payloads.forEach(threat => {
+                let atk = ATTACK_TYPES.find(a => a.type.toLowerCase().includes((threat.type || '').toLowerCase()))
+                    || ATTACK_TYPES.find(a => a.category.toLowerCase().includes((threat.type || '').toLowerCase()))
+                    || ATTACK_TYPES[Math.floor(Math.random() * ATTACK_TYPES.length)];
+
+                const isCritical = threat.risk_score > 80 || threat.threat_level === 'CRITICAL';
+                const isHigh = threat.threat_level === 'HIGH';
+
+                const src = {
+                    lat: threat.location?.lat || 0,
+                    lng: threat.location?.lng || 0,
+                    name: threat.location?.city && threat.location.city !== 'Unknown' ? threat.location.city : (threat.location?.country ? threat.location.country : 'Unknown Host'),
+                    country: threat.location?.country || ''
+                };
+
+                const tgtPool = TARGETS;
+                const tgt = tgtPool[Math.floor(Math.random() * tgtPool.length)];
+
+                const uid = Date.now() + Math.random();
+                const dur = isCritical ? 3500 : isHigh ? 2800 : 2000;
+
+                newArcs.push({
+                    id: uid,
+                    startLat: src.lat, startLng: src.lng,
+                    endLat: tgt.lat, endLng: tgt.lng,
+                    color: [`${atk.color}00`, atk.color],
+                    stroke: isCritical ? 2.5 : isHigh ? 1.5 : 0.8,
+                    dashLen: isCritical ? 0.9 : 0.5,
+                    dashGap: 0.1,
+                    animTime: dur,
+                    altitude: isCritical ? 0.55 : isHigh ? 0.4 : 0.25,
+                });
+
+                newRings.push({
+                    id: uid,
+                    lat: tgt.lat, lng: tgt.lng,
+                    color: atk.color,
+                    maxR: isCritical ? 9 : isHigh ? 5.5 : 3.5,
+                    speed: isCritical ? 3.0 : 1.8,
+                    repeat: 700,
+                });
+
+                const blocked = threat.risk_score > 50;
+                newLogs.push({
+                    id: uid,
+                    srcName: src.name,
+                    srcCountry: src.country,
+                    tgtName: tgt.name,
+                    type: threat.type || atk.type,
+                    category: atk.category,
+                    severity: threat.threat_level || atk.severity,
+                    color: atk.color,
+                    isCritical,
+                    desc: threat.source ? `Threat intel from ${threat.source}` : atk.desc,
+                    srcIP: threat.ip || 'Unknown IP',
+                    cve: null,
+                    time: new Date(),
+                    blocked: blocked,
+                });
+
+                statsDiff.total += 1;
+                if (blocked) statsDiff.blocked += 1;
+                if (isCritical) statsDiff.critical += 1;
+
+                catDiff[atk.category] = (catDiff[atk.category] || 0) + 1;
+
+                // Auto-cleanup for these specific items after duration
+                setTimeout(() => {
+                    setArcsData(prev => prev.filter(a => a.id !== uid));
+                    setRingsData(prev => prev.filter(r => r.id !== uid));
+                }, dur + 1000);
+            });
+
+            // Perform batched state updates
+            if (newArcs.length > 0) setArcsData(prev => [...prev.slice(-(80 - newArcs.length)), ...newArcs]);
+            if (newRings.length > 0) setRingsData(prev => [...prev.slice(-(30 - newRings.length)), ...newRings]);
+            if (newLogs.length > 0) setAttackLogs(prev => [...newLogs, ...prev.slice(0, 49 - newLogs.length)]);
+
+            if (statsDiff.total > 0) {
+                setStats(s => ({
+                    total: s.total + statsDiff.total,
+                    blocked: s.blocked + statsDiff.blocked,
+                    critical: s.critical + statsDiff.critical,
+                }));
+            }
+            if (Object.keys(catDiff).length > 0) {
+                setCatCounts(prev => {
+                    const next = { ...prev };
+                    for (const [k, v] of Object.entries(catDiff)) next[k] = (next[k] || 0) + v;
+                    return next;
+                });
+            }
+
+        }, 500);
+
         return () => {
+            clearInterval(batchInterval);
             clearTimeout(reconnectTimeout);
             if (ws) ws.close();
         };
     }, []);
 
     // ── DEFCON level ──────────────────────────────────────────────────────────
-    useEffect(() => {
-        if (stats.total === 0) {
-            setDefconLevel(5);
-            return;
-        }
+    let defconLevel = 5;
+    if (stats.total > 0) {
         const pct = (stats.critical / stats.total) * 100;
-        if (pct > 5) setDefconLevel(1);
-        else if (pct > 3) setDefconLevel(2);
-        else if (pct > 1.5) setDefconLevel(3);
-        else if (pct > 0) setDefconLevel(4);
-        else setDefconLevel(5);
-    }, [stats]);
+        if (pct > 5) defconLevel = 1;
+        else if (pct > 3) defconLevel = 2;
+        else if (pct > 1.5) defconLevel = 3;
+        else if (pct > 0) defconLevel = 4;
+    }
 
     const defconColor = { 1: '#ff2e5b', 2: '#f97316', 3: '#facc15', 4: '#00ff88', 5: '#0ea5e9' }[defconLevel];
 
@@ -499,34 +523,32 @@ export default function LiveMap() {
 
                         {/* Globe render */}
                         <div ref={containerRef} style={{ width: '100%', height: dimensions.height }}>
-                            {useMemo(() => (
-                                <Globe
-                                    ref={globeRef}
-                                    onGlobeReady={() => setGlobeReady(true)}
-                                    width={dimensions.width}
-                                    height={dimensions.height}
-                                    globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
-                                    bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-                                    atmosphereColor="#00f5ff"
-                                    atmosphereAltitude={0.12}
-                                    hexPolygonsData={countriesData}
-                                    hexPolygonResolution={3}
-                                    hexPolygonMargin={0.7}
-                                    hexPolygonColor={() => 'rgba(0,245,255,0.02)'}
-                                    arcsData={arcsData}
-                                    arcColor={d => d.color}
-                                    arcDashLength={d => d.dashLen ?? 0.7}
-                                    arcDashGap={d => d.dashGap ?? 0.2}
-                                    arcDashAnimateTime={d => d.animTime ?? 2000}
-                                    arcStroke={d => d.stroke ?? 0.8}
-                                    arcAltitude={d => d.altitude ?? 0.3}
-                                    ringsData={ringsData}
-                                    ringColor={d => `${d.color}cc`}
-                                    ringMaxRadius={d => d.maxR ?? 4}
-                                    ringPropagationSpeed={d => d.speed ?? 2}
-                                    ringRepeatPeriod={d => d.repeat ?? 800}
-                                />
-                            ), [dimensions.width, dimensions.height, countriesData])}
+                            <Globe
+                                ref={globeRef}
+                                onGlobeReady={() => setGlobeReady(true)}
+                                width={dimensions.width}
+                                height={dimensions.height}
+                                globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+                                bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                                atmosphereColor="#00f5ff"
+                                atmosphereAltitude={0.12}
+                                hexPolygonsData={countriesData}
+                                hexPolygonResolution={3}
+                                hexPolygonMargin={0.7}
+                                hexPolygonColor={() => 'rgba(0,245,255,0.02)'}
+                                arcsData={arcsData}
+                                arcColor={d => d.color}
+                                arcDashLength={d => d.dashLen ?? 0.7}
+                                arcDashGap={d => d.dashGap ?? 0.2}
+                                arcDashAnimateTime={d => d.animTime ?? 2000}
+                                arcStroke={d => d.stroke ?? 0.8}
+                                arcAltitude={d => d.altitude ?? 0.3}
+                                ringsData={ringsData}
+                                ringColor={d => `${d.color}cc`}
+                                ringMaxRadius={d => d.maxR ?? 4}
+                                ringPropagationSpeed={d => d.speed ?? 2}
+                                ringRepeatPeriod={d => d.repeat ?? 800}
+                            />
                         </div>
                     </div>
 
