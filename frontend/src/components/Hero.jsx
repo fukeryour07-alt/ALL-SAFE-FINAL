@@ -98,22 +98,22 @@ export default function Hero({ nav }) {
                 {/* Title */}
                 <motion.div style={{ opacity: fadeO, textAlign: 'center', marginBottom: 40 }} variants={stagger} initial="hidden" animate="show">
                     <motion.h1 variants={itemV} className="syne" style={{
-                        fontSize: 'clamp(48px, 8vw, 108px)', fontWeight: 900,
-                        lineHeight: 0.92, letterSpacing: '-.04em', marginBottom: 16,
+                        fontSize: 'clamp(38px, 5.5vw, 72px)', fontWeight: 900,
+                        lineHeight: 1.05, letterSpacing: '-.03em', marginBottom: 20,
                     }}>
-                        Defend Your <br />
+                        Defend Your{' '}
                         <span className="grad-text">Digital Perimeter</span>
                     </motion.h1>
                     <motion.p variants={itemV} style={{
                         maxWidth: 580, margin: '0 auto 12px',
-                        fontSize: 13, fontWeight: 700, color: 'var(--cyan)', opacity: 0.8,
-                        letterSpacing: '.4em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 11, fontWeight: 700, color: 'var(--cyan)', opacity: 0.7,
+                        letterSpacing: '.25em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace',
                     }}>
-                        ENTERPRISE THREAT INTELLIGENCE &amp; RESPONSE
+                        Enterprise Threat Intelligence &amp; Response
                     </motion.p>
                     <motion.p variants={itemV} style={{
-                        maxWidth: 640, margin: '0 auto 48px', fontSize: 17,
-                        color: 'var(--text-2)', lineHeight: 1.65, fontWeight: 400,
+                        maxWidth: 600, margin: '0 auto 48px', fontSize: 16,
+                        color: 'var(--text-2)', lineHeight: 1.7, fontWeight: 400,
                     }}>
                         A Unified Cyber Defense Platform combining multi-engine recursion, cryptographic lookup,
                         and AI-driven behavior modeling to neutralize threats before they scale.

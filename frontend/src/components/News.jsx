@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { Radio, Loader2, ExternalLink } from 'lucide-react';
+import { Radio, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 
 const API = 'http://localhost:8000';
 
@@ -11,14 +11,20 @@ export default function News() {
     const [news, setNews] = useState([]);
     const [loading, setLoad] = useState(true);
 
-    useEffect(() => {
-        const fetchNews = async () => {
-            try {
-                const r = await axios.get(`${API}/news`);
+    const fetchNews = async () => {
+        setLoad(true);
+        try {
+            const r = await axios.get(`${API}/news`);
+            if (r.data && Array.isArray(r.data)) {
                 setNews(r.data);
-            } catch { setNews([]); }
-            finally { setLoad(false); }
-        };
+            } else {
+                setNews([]);
+            }
+        } catch { setNews([]); }
+        finally { setLoad(false); }
+    };
+
+    useEffect(() => {
         fetchNews();
     }, []);
 
@@ -29,16 +35,36 @@ export default function News() {
 
             <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                 {/* Header */}
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }} style={{ marginBottom: 48 }}>
-                    <div className="section-eyebrow">
-                        <Radio size={12} style={{ animation: 'blink 2s infinite step-end' }} />
-                        Cyber Intelligence Feed
-                    </div>
-                    <h1 className="syne" style={{ fontSize: 'clamp(36px,5vw,52px)', fontWeight: 800, letterSpacing: '-.02em' }}>
-                        Global <span className="glow-text">News</span> Feed
-                    </h1>
-                    <p style={{ color: 'var(--text-2)', marginTop: 8, fontSize: 15 }}>Latest cybersecurity threats, breaches, and industry updates.</p>
-                </motion.div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
+                    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }} style={{ marginBottom: 48 }}>
+                        <div className="section-eyebrow">
+                            <Radio size={12} style={{ animation: 'blink 2s infinite step-end' }} />
+                            Cyber Intelligence Feed
+                        </div>
+                        <h1 className="syne" style={{ fontSize: 'clamp(36px,5vw,52px)', fontWeight: 800, letterSpacing: '-.02em' }}>
+                            Global <span className="glow-text">News</span> Feed
+                        </h1>
+                        <p style={{ color: 'var(--text-2)', marginTop: 8, fontSize: 15 }}>Latest cybersecurity threats, breaches, and industry updates.</p>
+                    </motion.div>
+
+                    <motion.button
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+                        onClick={fetchNews}
+                        disabled={loading}
+                        whileHover={!loading ? { scale: 1.05 } : {}}
+                        whileTap={!loading ? { scale: 0.95 } : {}}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
+                            borderRadius: 'var(--r-full)', fontSize: 13, fontWeight: 700,
+                            cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1,
+                            background: 'rgba(124,58,237,.1)', border: '1px solid rgba(124,58,237,.3)',
+                            color: 'var(--violet)', transition: 'all 0.2s', marginTop: 15
+                        }}
+                    >
+                        <RefreshCw size={14} style={{ animation: loading ? 'spin-slow 1s linear infinite' : 'none' }} />
+                        {loading ? 'Refreshing...' : 'Refresh News'}
+                    </motion.button>
+                </div>
 
                 {loading && (
                     <div style={{ textAlign: 'center', color: 'var(--violet)', padding: '80px 0' }}>

@@ -413,20 +413,25 @@ export default function Scanner({ demoInput, onDemoConsumed }) {
                                         </div>
                                     )}
 
-                                    {result.shodan && (
+                                    {result.ipinfo && result.ipinfo.loc && (
                                         <div style={{ marginTop: 16, padding: 16, borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,.02)', border: '1px solid var(--border)' }}>
-                                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Search size={14} color="var(--green)" /> Shodan Intelligence</div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
-                                                <div><span style={{ color: 'var(--text-3)' }}>OS:</span> {result.shodan.os || 'Unknown'}</div>
-                                                <div><span style={{ color: 'var(--text-3)' }}>ISP:</span> {result.shodan.isp || 'Unknown'}</div>
-                                                <div style={{ gridColumn: '1 / -1' }}>
-                                                    <span style={{ color: 'var(--text-3)' }}>Tags:</span> {result.shodan.tags?.join(', ') || 'None'}
-                                                </div>
-                                                {result.shodan.vulns?.length > 0 && (
-                                                    <div style={{ gridColumn: '1 / -1', marginTop: 4 }}>
-                                                        <span style={{ color: 'var(--red)', fontWeight: 600 }}>Vulnerabilities:</span> {result.shodan.vulns.join(', ')}
-                                                    </div>
-                                                )}
+                                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Globe size={14} color="var(--cyan)" /> Exact Location Tracking (ipinfo.io)</div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) minmax(100px, 1fr)', gap: 12, fontSize: 13, marginBottom: 16 }}>
+                                                <div><span style={{ color: 'var(--text-3)' }}>City:</span> {result.ipinfo.city || 'Unknown'}</div>
+                                                <div><span style={{ color: 'var(--text-3)' }}>Region:</span> {result.ipinfo.region || 'Unknown'}</div>
+                                                <div><span style={{ color: 'var(--text-3)' }}>Postal:</span> {result.ipinfo.postal || 'Unknown'}</div>
+                                                <div><span style={{ color: 'var(--text-3)' }}>Org:</span> <span className="mono">{result.ipinfo.org || 'Unknown'}</span></div>
+                                            </div>
+                                            <div style={{ width: '100%', height: 260, borderRadius: 'var(--r-sm)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <iframe
+                                                    title="IP Location Map"
+                                                    width="100%"
+                                                    height="100%"
+                                                    style={{ border: 0 }}
+                                                    loading="lazy"
+                                                    allowFullScreen
+                                                    src={`https://maps.google.com/maps?q=${result.ipinfo.loc}&z=12&output=embed`}
+                                                />
                                             </div>
                                         </div>
                                     )}
@@ -520,6 +525,6 @@ export default function Scanner({ demoInput, onDemoConsumed }) {
                     )}
                 </AnimatePresence>
             </div>
-        </section>
+        </section >
     );
 }

@@ -1,0 +1,402 @@
+================================================================================
+  ALL SAFE 2.0 — COMPLETE PROJECT STATUS DOCUMENT
+  Team: NEXATHAN | Generated: 2026-03-07 19:42 IST
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. PROJECT OVERVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Name         : ALL SAFE 2.0
+  Version      : 3.0.0 (FastAPI backend versioning)
+  Type         : Full-Stack Cybersecurity Platform (Web App)
+  Purpose      : Hackathon submission — AI-powered unified SOC dashboard
+  GitHub Repo  : https://github.com/maahi-coder/ALL-SAFE-2.0
+  Local Path   : C:\Users\mahen\OneDrive\Apps\NEXATHAN
+
+  Description  :
+    ALL SAFE 2.0 is an intelligent, AI-powered cybersecurity platform built
+    to detect and mitigate digital threats in real time. It unifies multiple
+    threat intelligence engines, AI models (Gemini + LLaMA), and live 
+    honeypot data into a single, beautiful SOC-style dashboard. Designed for
+    both technical users and everyday internet users in India.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [User Browser]
+       │
+       ▼ HTTP/REST + WebSocket
+  [React Frontend — Vite Dev Server on port 5173]
+       │
+       ▼ axios / WebSocket (ws://localhost:8000)
+  [FastAPI Backend — Uvicorn on port 8000]
+       │
+       ├── VirusTotal API      (URL / File / Hash / Domain / IP scanning)
+       ├── AlienVault OTX API  (Threat pulse intelligence)
+       ├── AbuseIPDB API       (IP abuse reputation scoring)
+       ├── ThreatFox API       (IOC database lookups)
+       ├── HoneyDB API         (Honeypot sensor network)
+       ├── MaxMind Risk Feed   (Compromised IP feed via EmergingThreats)
+       ├── Google Gemini AI    (Primary AI — analysis & chat)
+       ├── Groq / LLaMA 3.3   (Secondary AI — fallback chat & analysis)
+       ├── XposedOrNot API     (Email data breach checks)
+       ├── ip-api.com          (Geo-location for threat map IPs)
+       └── SQLite Database     (Local scan history & analytics logging)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. TECH STACK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  FRONTEND
+  ─────────────────────────────────────────────
+  • Framework     : React 18 + Vite
+  • Animations    : Framer Motion
+  • Icons         : Lucide React
+  • HTTP Client   : Axios
+  • 3D Globe Map  : react-globe.gl
+  • PDF Reports   : jsPDF + jspdf-autotable
+  • Fonts         : Syne, Space Grotesk, JetBrains Mono (Google Fonts)
+  • Styling       : Pure CSS (CSS Variables, Glassmorphism, Dark Theme)
+
+  BACKEND
+  ─────────────────────────────────────────────
+  • Framework     : FastAPI (Python 3.11)
+  • Server        : Uvicorn (ASGI) with --reload
+  • Database      : SQLite3 (allsafe.db — scan logs)
+  • System Mon.   : psutil (CPU, RAM, local network connections)
+  • PDF Parsing   : PyPDF2
+  • DOCX Parsing  : python-docx
+  • Phone OSINT   : phonenumbers library
+  • WHOIS Lookup  : python-whois
+  • Networking    : httpx (async HTTP client)
+  • Env Config    : python-dotenv
+
+  AI ENGINES
+  ─────────────────────────────────────────────
+  • Primary AI    : Google Gemini 2.5 Flash (via google-genai SDK)
+  • Secondary AI  : LLaMA 3.3 70B (via Groq Cloud API)
+  • Fallback      : If both fail, graceful error message shown to user
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. ALL FEATURES (Complete List)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [HOME / HERO]
+  • Animated cybersecurity themed landing page
+  • Live threat counter in the navbar (WebSocket-powered)
+  • Global keyboard shortcuts (H=Home S=Scan M=Map etc.)
+  • Command Palette (Ctrl+K) for quick navigation & scanning
+
+  [OMNI SCANNER] ← NEW FEATURE
+  • Single unified input box (URL / IP / Domain / Password / Text)
+  • Auto-detects input type using regex + AI classification
+  • Routes to the correct backend scan automatically
+  • Displays: Threat Score (0–100), Risk Level, Reason, Recommendation
+  • Animated threat meter / progress bar
+  • Powered by Gemini AI for unclassified inputs
+
+  [ENGINES SCANNER]
+  • Scan Modes: URL, File Upload, Hash, Domain, IP, Phone, Email
+  • VirusTotal: 70+ AV engine results with stats breakdown
+  • IP Scan: VirusTotal + OTX + AbuseIPDB + ThreatFox + HoneyDB + WHOIS
+  • Domain Scan: VirusTotal + OTX + ThreatFox cross-check
+  • "Deep Web Threat Context" card showing all OSINT sources
+  • AI Intelligence Briefing (Gemini-generated for every scan)
+  • PDF Report Download (professional multi-section report)
+  • Scan History logging to SQLite database
+  • Idle state with animated visual when no scan is running
+
+  [LIVE THREAT MAP]
+  • Real-time 3D globe (react-globe.gl) with arc animations
+  • Attack data from 6 simultaneous sources:
+    1. ThreatFox API (active malware C2 IPs)
+    2. AbuseIPDB API (crowd-reported abusive IPs)
+    3. HoneyDB API (honeypot trap hits)
+    4. AlienVault OTX (threat pulses)
+    5. Local System Sensor (YOUR machine's live network connections)
+    6. MaxMind Risk Engine (compromised IP feed from EmergingThreats)
+  • WebSocket live feed (updates every 30 seconds)
+  • 30+ categorized attack types (RECON, EXPLOIT, MALWARE, etc.)
+  • DEFCON level indicator, attack stats sidebar, category filter
+  • Country target rings + arc animations per attack
+
+  [JOB SCAM DETECTOR]
+  • Rule-based detection (12 scam pattern rules with weighted scoring)
+  • AI-powered analysis (Gemini generates detailed risk assessment)
+  • Scam Score 0–100 with Risk Level (CLEAN / LOW / MEDIUM / HIGH)
+  • Document Upload: supports PDF, DOCX, TXT analysis
+  • Domain extraction from uploaded documents + VirusTotal scan
+  • Red Flag Checklist tab (manual interactive checklist)
+  • Common scam examples tab for reference
+  • PDF Report Download with full analysis
+
+  [EMAIL HEADER ANALYZER]
+  • Paste raw email headers for advanced analysis
+  • Checks: SPF, DKIM, DMARC authentication
+  • Detects: Header spoofing, relay chains, suspicious mail servers
+  • Gemini AI generates a professional summary
+  • PDF Report download
+
+  [AI CHATBOT] ← MAJOR UPGRADE
+  • Collapsible sidebar with conversation history
+  • Multi-model support: Gemini 2.5 Flash + LLaMA 3.3 70B (switch live)
+  • Streaming typewriter animation for AI responses
+  • Natural Language Scan Triggering:
+    - "Scan this URL: example.com" → auto runs URL scan
+    - "Is 8.8.8.8 safe?" → auto runs IP scan  
+    - "Check this job offer..." → auto runs Job Scam scan
+    - "Get my security stats" → auto pulls system stats
+    - "Show my recent scans" → auto pulls DB history
+    - "Omni scan: <anything>" → auto routes through unified scanner
+  • Inline Scan Result Cards (collapsible, color-coded by risk)
+  • Full Markdown rendering (headers, bullets, code blocks, bold)
+  • Capability pills overview on welcome screen
+  • Copy button on every AI message
+  • Animated glow avatar per model
+
+  [INTELLIGENCE DASHBOARD]
+  • Total scans, High/Medium/Clean breakdown
+  • Live CPU, RAM, Disk usage (real system data via psutil)
+  • Scan type distribution charts
+  • Recent scan history preview
+
+  [SCAN HISTORY / LOGS]
+  • Full searchable scan log (SQLite backend)
+  • Shows: type, target, risk level, timestamp
+  • Clear history function
+
+  [CYBER NEWS]
+  • Live feed from The Hacker News (via RSS2JSON API)
+  • Category tags + publication dates + article summaries
+  • Click-through to full articles
+
+  [CRYPTO VAULT]
+  • Crypto price tracker (live data)
+  • Wallet security tips
+
+  [PASSWORD STRENGTH ANALYZER]
+  • Real-time entropy calculation
+  • Strength meter (Weak / Fair / Strong / Very Strong / Fortress)
+  • Detects common passwords, keyboard patterns
+  • Suggestions for improvement
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. API KEYS IN USE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  API Service         Status    Used For
+  ─────────────────────────────────────────────────────────────────────
+  VirusTotal          ✅ ACTIVE  URL/File/Hash/Domain/IP scanning (70+ engines)
+  Google Gemini 1     ✅ ACTIVE  Primary AI (gemini-2.5-flash model)
+  Google Gemini 2     ✅ ACTIVE  Fallback Gemini key if key 1 rate-limits
+  Groq (LLaMA 3.3)    ✅ ACTIVE  Secondary AI chatbot & analysis
+  AlienVault OTX      ✅ ACTIVE  IP/Domain threat pulse intelligence
+  AbuseIPDB           ✅ ACTIVE  IP reputation & crowd-reported abuse
+  ThreatFox           ✅ ACTIVE  Malware IOC database search
+  HoneyDB             ✅ ACTIVE  Honeypot network sensor hits + IP lookup
+  MaxMind (proxy)     ✅ ACTIVE  EmergingThreats compromised IP list
+  XposedOrNot         ✅ ACTIVE  Email breach detection (public API)
+  ip-api.com          ✅ ACTIVE  Free IP geolocation for Live Map
+  RSS2JSON            ✅ ACTIVE  Cyber news feed (The Hacker News)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  6. BACKEND ENDPOINTS (API Routes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  GET   /                     Health check
+  POST  /scan/url             Scan a URL (VirusTotal + AI summary)
+  POST  /scan/file            Upload & scan a file (VirusTotal)
+  POST  /scan/hash            Lookup a file hash (VirusTotal)
+  POST  /scan/domain          Scan a domain (VT + OTX + ThreatFox)
+  POST  /scan/ip              Scan an IP (VT + OTX + AbuseIPDB + ThreatFox + HoneyDB)
+  POST  /scan/phone           Phone number OSINT + spam detection
+  POST  /scan/identity        Email breach check (XposedOrNot API)
+  POST  /scan/job-scam        Job offer scam analysis (rules + Gemini AI)
+  POST  /scan/job-document    Upload PDF/DOCX/TXT for job scam analysis
+  POST  /scan/unified         ← OMNI SCANNER — auto-routes any input
+  POST  /analyze/email-headers Email header phishing analysis
+  POST  /chat                 AI chatbot (Gemini + Groq, intent parsing)
+  GET   /history              Retrieve scan history from SQLite
+  DELETE /history/clear       Clear all scan history
+  GET   /stats                System stats (CPU/RAM + scan counts)
+  GET   /news                 Live cyber news (The Hacker News RSS)
+  WS    /ws/threats           WebSocket — live threat feed for map
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  7. FRONTEND PAGES / COMPONENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Component File            Page/Feature                  Nav Key
+  ─────────────────────────────────────────────────────────────────
+  Hero.jsx                  Landing / Home page            H
+  UnifiedScanner.jsx        Omni Scanner (new)             O
+  Scanner.jsx               Threat Engines Scanner         S
+  LiveMap.jsx               3D Live Attack Globe Map       M
+  Dashboard.jsx             Security Intelligence Hub      I
+  Crypto.jsx                Crypto Vault Tracker           V
+  News.jsx                  Cyber News Feed                N
+  History.jsx               Scan Logs / History            L
+  JobScam.jsx               Job Scam Detector              J
+  Chatbot.jsx               AI Security Chatbot            C
+  EmailHeaderAnalyzer.jsx   (inside Scanner tab)           -
+  PasswordStrength.jsx      (inside Scanner tab)           -
+  Navbar.jsx                Top navigation bar             -
+  Footer.jsx                Bottom footer                  -
+  CommandPalette.jsx        Ctrl+K command palette         -
+  BgCanvas.jsx              Animated particle background   -
+  Cursor.jsx                Custom neon cursor             -
+  Toast.jsx                 Toast notification system      -
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  8. PROJECT FILE STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  NEXATHAN/
+  ├── backend/
+  │   ├── main.py               ← All API endpoints (1337 lines)
+  │   ├── .env                  ← All API keys (DO NOT commit)
+  │   ├── requirements.txt      ← Python dependencies
+  │   └── venv/                 ← Python virtual environment
+  ├── frontend/
+  │   ├── src/
+  │   │   ├── App.jsx           ← Root + routing + page transitions
+  │   │   ├── index.css         ← Global CSS design system
+  │   │   └── components/       ← 18 component files
+  │   ├── index.html
+  │   ├── vite.config.js
+  │   └── package.json
+  ├── allsafe.db                ← SQLite scan history database
+  ├── AllSafe_PPT_Maker.bas     ← VBA macro for hackathon PPT
+  ├── ALL_SAFE_Prototype.pptx   ← Earlier prototype PPT
+  ├── README.md                 ← Project readme
+  └── RUN_INSTRUCTIONS.md       ← How to run locally
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  9. HOW TO RUN THE PROJECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Step 1 — Start Backend:
+    cd C:\Users\mahen\OneDrive\Apps\NEXATHAN\backend
+    .\venv\Scripts\uvicorn.exe main:app --reload --host 0.0.0.0 --port 8000
+
+  Step 2 — Start Frontend:
+    cd C:\Users\mahen\OneDrive\Apps\NEXATHAN\frontend
+    npm run dev
+
+  Step 3 — Open browser:
+    http://localhost:5173
+
+  Backend API Explorer:
+    http://localhost:8000/docs     (Swagger UI — auto-generated)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  10. PYTHON DEPENDENCIES (backend/requirements.txt)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  fastapi
+  uvicorn[standard]
+  python-dotenv
+  httpx
+  aiofiles
+  phonenumbers
+  python-whois
+  psutil
+  groq
+  google-genai
+  PyPDF2
+  python-docx
+  python-multipart       ← required for file upload endpoints
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  11. FRONTEND NPM DEPENDENCIES (package.json)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  react                  + react-dom
+  framer-motion          (page + micro animations)
+  lucide-react           (500+ icon library)
+  axios                  (HTTP client)
+  react-globe.gl         (3D WebGL globe for Live Map)
+  jspdf                  (PDF report generation)
+  jspdf-autotable        (PDF table formatting)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  12. DESIGN SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Theme         : Dark Mode (Military / SOC / Cyberpunk aesthetic)
+  Background    : #020617 (Deep navy)
+  Primary Color : #00F5FF (Neon Cyan)
+  Accent 1      : #7C3AED (Violet / Indigo)
+  Accent 2      : #FF2E5B (Alert Red)
+  Success       : #00FF88 (Green)
+  Warning       : #FFB830 (Amber)
+  Surface       : rgba(255,255,255,0.04) (Glassmorphism cards)
+  Border        : rgba(255,255,255,0.08)
+  Fonts         :
+    Syne              → headings (heavy, tech feel)
+    Space Grotesk     → body copy
+    JetBrains Mono    → code / data / timestamps
+  Effects:
+    - Glassmorphism (backdrop-filter: blur)
+    - Gradient glow boxes (box-shadow with color)  
+    - Animated background particle canvas
+    - Custom neon cursor
+    - Page transitions (Framer Motion exit/enter)
+    - Scroll-triggered nav appearance
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  13. CURRENT STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  BACKEND SERVER    : ✅ RUNNING  (port 8000, uvicorn --reload)
+  FRONTEND SERVER   : ✅ RUNNING  (port 5173, vite dev)
+  DATABASE          : ✅ ACTIVE   (allsafe.db — SQLite)
+  WEBSOCKET FEED    : ✅ LIVE     (/ws/threats — 30s update cycle)
+
+  Feature                       Status
+  ─────────────────────────────────────────────
+  Omni Scanner                  ✅ Complete
+  URL / Hash / File Scanner     ✅ Complete
+  IP Scanner (5 APIs)           ✅ Complete
+  Domain Scanner (3 APIs)       ✅ Complete
+  Phone OSINT                   ✅ Complete
+  Email Breach Check            ✅ Complete
+  Job Scam Detector + Upload    ✅ Complete
+  Email Header Analyzer         ✅ Complete
+  Password Strength Analyzer    ✅ Complete
+  Live 3D Threat Map            ✅ Complete
+  AI Chatbot (all tools)        ✅ Complete
+  PDF Report Export             ✅ Complete (Scanner + Email + Job)
+  Intelligence Dashboard        ✅ Complete
+  Scan History                  ✅ Complete
+  Cyber News                    ✅ Complete
+  MaxMind Risk Integration      ✅ Complete
+  Local System Sensor           ✅ Complete
+  Command Palette (Ctrl+K)      ✅ Complete
+  Hackathon PPT (VBA)           ✅ Generated
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  14. HACKATHON SUBMISSION INFO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Team Name        : NEXATHAN
+  Project Name     : ALL SAFE 2.0
+  Category         : Cybersecurity / AI
+  Problem Solved   : Unified threat detection accessible to all Indians
+  Target Users     : Job seekers, students, SMBs, developers, citizens
+  Unique Value     :
+    • Only platform combining URL + IP + Hash + Email + Phone + Job Scam
+    • AI Chatbot can trigger any scan via natural language
+    • Real machine network connections shown on 3D live globe
+    • Professional PDF reports — enterprise-grade output
+    • Entirely open-source, locally deployable
+
+  GitHub           : https://github.com/maahi-coder/ALL-SAFE-2.0
+  PPT File         : C:\Users\mahen\OneDrive\Apps\NEXATHAN\AllSafe_PPT_Maker.bas
+
+================================================================================
+  END OF DOCUMENT
+  ALL SAFE 2.0 — NEXATHAN — March 2026
+================================================================================

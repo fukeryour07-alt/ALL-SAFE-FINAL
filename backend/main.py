@@ -34,7 +34,26 @@ HONEYDB_BASE = "https://honeydb.io/api"
 HEADERS = {"x-apikey": VT_API_KEY}
 
 app = FastAPI(title="NEXATHAN SOC", version="3.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def health_check():
+    return {"status": "ok", "message": "ALL SAFE Backend Online"}
+
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from routers.chat import limiter as chat_limiter
+app.state.limiter = chat_limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+from routers.chat import router as chat_router
+app.include_router(chat_router)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_KEY_01 = os.getenv("GEMINI_API_KEY_01", "")
@@ -158,7 +177,7 @@ def get_gemini_email_summary(from_addr, subject, flags, auth_results):
             pass
     return "AI summary engine temporarily unavailable."
 
-def nmap_mock_scan(ip):
+def quick_port_scan(ip):
     open_ports = []
     common_ports = {21:"FTP", 22:"SSH", 23:"Telnet", 25:"SMTP", 53:"DNS", 80:"HTTP", 110:"POP3", 143:"IMAP", 443:"HTTPS", 445:"SMB", 3389:"RDP", 8080:"HTTP-Proxy"}
     for port, service in common_ports.items():
@@ -286,11 +305,10 @@ async def update_threat_feed():
         if ip not in unique_ips: unique_ips[ip] = event
         else:
             unique_ips[ip]['sev'] = min(1.0, unique_ips[ip]['sev'] + 0.1)
-            # avoid extremely long source strings
             if len(unique_ips[ip]['source']) < 60:
                 unique_ips[ip]['source'] += f", {event['source']}"
                 
-    ip_list = list(unique_ips.keys())[:50]
+    ip_list = list(unique_ips.keys())
     geo_results = await get_geo_batch(ip_list)
     processed = []
     country_counts = {}
@@ -320,6 +338,7 @@ async def update_threat_feed():
         }
         processed.append(threat)
         await manager.broadcast(json.dumps({"type": "NEW_ATTACK", "payload": threat}))
+        await asyncio.sleep(random.uniform(0.1, 0.5))
     REAL_THREATS = processed
     sorted_c = sorted(country_counts.items(), key=lambda x: x[1], reverse=True)
     THREAT_ANALYTICS["top_attackers"] = [{"country": c, "count": count} for c, count in sorted_c[:5]]
@@ -337,7 +356,7 @@ async def threat_loop():
             import traceback
             print(f"[Threat Loop Error] {e}")
             traceback.print_exc()
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
 
 @app.on_event("startup")
 async def startup_event():
@@ -358,13 +377,6 @@ async def get_threats(): return REAL_THREATS
 @app.get("/threats/analytics")
 async def get_analytics(): return THREAT_ANALYTICS
 
-def get_shodan_mock():
-    return {
-        "os": random.choice(["Linux 5.x", "Windows Server 2019", "FreeBSD", "Unknown"]),
-        "isp": random.choice(["Reliance Jio", "Bharti Airtel", "Vodafone Idea", "BSNL Broadband", "Tata Communications", "Cloud Hosting Provider"]),
-        "tags": random.choices(["cloud", "database", "web", "vpn"], k=2),
-        "vulns": ["CVE-2024-1234", "CVE-2023-5678"] if random.random() > 0.5 else []
-    }
 
 def get_system_resources():
     try:
@@ -438,6 +450,9 @@ class EmailHeaderPayload(BaseModel):
 class JobScamPayload(BaseModel):
     text: str
 
+class ThreatQueryPayload(BaseModel):
+    threat: str
+
 # ─── JOB SCAM DETECTION RULES ─────────────────────────────────────────────
 JOB_SCAM_RULES = [
     {"pattern": r"(?i)(registration|security|training|activation)\s*(fee|deposit|charge|cost|pay)", "weight": 30, "flag": "Asks for upfront payment / registration fee"},
@@ -490,6 +505,38 @@ def get_job_scam_ai_summary(text_snippet: str, score: int, flags: list) -> str:
 @app.get("/")
 async def root():
     return {"status": "ALL SAFE API v2.0", "engine": bool(VT_API_KEY)}
+
+@app.post("/scan/threat-info")
+async def get_threat_info(payload: ThreatQueryPayload):
+    threat = payload.threat.strip()
+    prompt = (
+        f"You are a Senior Cyber Threat Educator and Intelligence Trainer. "
+        f"Provide a highly engaging, 3-paragraph educational breakdown of the cyber threat '{threat}'.\n"
+        f"1. Explain what it is technically, but simply.\n"
+        f"2. Describe a famous, real-world devastating example of this attack.\n"
+        f"3. Provide top prevention strategies to protect against it.\n"
+        f"Format the output using Markdown. Use bolding and lists where appropriate."
+    )
+    
+    if gemini_client:
+        try:
+            response = gemini_client.models.generate_content(model=ACTIVE_GEMINI_MODEL, contents=prompt)
+            return {"ai_summary": response.text.strip()}
+        except Exception as e:
+            print(f"[AI] Gemini threat info failed: {e}")
+
+    if groq_client:
+        try:
+            completion = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=600, temperature=0.4
+            )
+            return {"ai_summary": completion.choices[0].message.content.strip()}
+        except:
+            pass
+            
+    return {"ai_summary": "AI educational engine temporarily unavailable."}
 
 @app.post("/scan/job-scam")
 async def scan_job_scam(payload: JobScamPayload):
@@ -656,8 +703,7 @@ async def scan_ip(payload: IPPayload):
             stats = attrs.get("last_analysis_stats", {})
             positives = stats.get("malicious", 0) + stats.get("suspicious", 0)
             risk = get_risk(positives)
-            nmap_ports = nmap_mock_scan(payload.ip)
-            shodan_data = get_shodan_mock()
+            nmap_ports = quick_port_scan(payload.ip)
             whois_data = {}
             try:
                 w = whois.whois(payload.ip)
@@ -669,6 +715,15 @@ async def scan_ip(payload: IPPayload):
             except:
                 pass
 
+            ipinfo_data = {}
+            try:
+                # Fetch exact location using ipinfo.io
+                r_ip = await client.get(f"https://ipinfo.io/{payload.ip}/json")
+                if r_ip.status_code == 200:
+                    ipinfo_data = r_ip.json()
+            except:
+                pass
+
             ai_summary = get_ai_analysis(payload.ip, "IP Address", risk, stats)
 
             result = {
@@ -677,8 +732,8 @@ async def scan_ip(payload: IPPayload):
                 "country": attrs.get("country", "Unknown"),
                 "as_owner": attrs.get("as_owner", "Unknown"),
                 "nmap": nmap_ports,
-                "shodan": shodan_data,
                 "whois": whois_data,
+                "ipinfo": ipinfo_data,
                 "ai_summary": ai_summary
             }
             log_scan("ip", payload.ip, result, risk)
@@ -817,40 +872,108 @@ async def get_stats():
         "system_resources": sys_res
     }
 
+import xml.etree.ElementTree as ET
+
 @app.get("/news")
 async def get_news():
     news_items = []
     
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            rss_url = "https://feeds.feedburner.com/TheHackersNews"
-            api_url = f"https://api.rss2json.com/v1/api.json?rss_url={rss_url}"
-            r = await client.get(api_url)
+    rss_feeds = [
+        ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews"),
+        ("KrebsOnSecurity", "https://krebsonsecurity.com/feed/"),
+        ("Dark Reading", "https://www.darkreading.com/rss.xml"),
+        ("CISA Alerts", "https://www.cisa.gov/cybersecurity-advisories/all.xml")
+    ]
+    
+    async def fetch_rss(client, source_name, url):
+        try:
+            r = await client.get(url, follow_redirects=True)
+            if r.status_code == 200:
+                root = ET.fromstring(r.text)
+                items = []
+                for item in root.findall(".//item")[:6]:
+                    title = item.find("title").text if item.find("title") is not None else ""
+                    link = item.find("link").text if item.find("link") is not None else "#"
+                    desc = item.find("description").text if item.find("description") is not None else ""
+                    pubDate = item.find("pubDate").text if item.find("pubDate") is not None else ""
+
+                    desc = re.sub('<[^<]+>', '', desc).strip()
+                    if len(desc) > 180: desc = desc[:177] + "..."
+                    
+                    # Convert pubDate to a sortable ISO string or just keep raw
+                    try:
+                        # Attempt to extract YYYY-MM-DD
+                        pd_parsed = email.utils.parsedate_to_datetime(pubDate)
+                        time_str = pd_parsed.strftime("%Y-%m-%d")
+                    except:
+                        time_str = pubDate.split(" ")[0] if pubDate else datetime.now().strftime("%Y-%m-%d")
+
+                    items.append({
+                        "title": title,
+                        "source": source_name,
+                        "time": time_str,
+                        "tag": "CYBER INTELLIGENCE",
+                        "summary": desc,
+                        "link": link
+                    })
+                return items
+        except Exception as e:
+            print(f"[News Error] {source_name}: {e}")
+        return []
+
+    async def fetch_wiki(client):
+        try:
+            import random
+            keywords = ["ransomware attack", "hacked", "data breach", "DDoS attack", "malware", "cyber espionage", "zero-day exploit", "APT group", "phishing campaign", "botnet"]
+            q = random.choice(keywords)
+            url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={q}&utf8=&format=json&srlimit=15"
+            headers_wiki = {"User-Agent": "ALLSAFE_OSINT_Engine/2.0 (contact@allsafe.io)"}
+            r = await client.get(url, headers=headers_wiki)
             if r.status_code == 200:
                 data = r.json()
-                if data.get("status") == "ok":
-                    for item in data.get("items", [])[:15]:
-                        desc = item.get("description", "")
-                        # Simple HTML tag removal via regex
-                        desc = re.sub('<[^<]+>', '', desc).strip()
-                        if len(desc) > 180: desc = desc[:177] + "..."
-                        
-                        categories = item.get("categories", [])
-                        tag = categories[0].upper() if categories else "CYBERSECURITY"
-                        
-                        news_items.append({
-                            "title": item.get("title", ""),
-                            "source": "The Hacker News",
-                            "time": item.get("pubDate", "").split(" ")[0],
-                            "tag": tag,
-                            "summary": desc,
-                            "link": item.get("link", "#")
-                        })
-        if news_items:
-            return news_items
+                items = []
+                search_res = data.get("query", {}).get("search", [])
+                
+                # Shuffle so you get different historic reports on every refresh!
+                random.shuffle(search_res)
+                
+                for item in search_res[:6]:
+                    desc = " ".join(item.get("snippet", "").split())
+                    desc = re.sub('<[^<]+>', '', desc).replace('&quot;', '"').replace('&#039;', "'").strip()
+                    items.append({
+                        "title": item.get("title", ""),
+                        "source": "Wikipedia Cyber Intel",
+                        "time": item.get("timestamp", "").split("T")[0],
+                        "tag": "HISTORIC / WIKI",
+                        "summary": desc,
+                        "link": f"https://en.wikipedia.org/?curid={item.get('pageid')}"
+                    })
+                return items
+        except Exception as e:
+            print(f"[News Error] Wikipedia: {e}")
+        return []
+
+    try:
+        import email.utils
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        async with httpx.AsyncClient(timeout=10, headers=headers) as client:
+            tasks = [fetch_rss(client, name, url) for name, url in rss_feeds]
+            tasks.append(fetch_wiki(client))
+            results = await asyncio.gather(*tasks)
+            
+            for res in results:
+                news_items.extend(res)
+                
+            # Randomize the exact ordering slightly so it never looks stale, 
+            # while keeping newer articles mostly near the top
+            import random
+            random.shuffle(news_items)
+            news_items.sort(key=lambda x: x["time"], reverse=True)
+            
+            if news_items:
+                return news_items[:30]
     except Exception as e:
-        print(f"[News Error] {e}")
-        pass
+        print(f"[News Error Global] {e}")
         
     return []
 
@@ -865,6 +988,8 @@ async def analyze_email_headers(payload: EmailHeaderPayload):
     )
     return {"ai_summary": ai_summary}
 
+from routers.inbox import router as inbox_router
+app.include_router(inbox_router)
 
 if __name__ == "__main__":
     import uvicorn

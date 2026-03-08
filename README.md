@@ -24,6 +24,9 @@
     *   **Email Header Analyzer** to trace email origins.
     *   **Toast Notification System** for sleek UI alerts.
 *   **📄 Reports:** Downloadable PDF threat reports and JSON raw view toggle.
+*   **📊 System Flow Diagrams:** Full component and architecture flows available in [docs/flow_diagrams.md](./docs/flow_diagrams.md).
+*   **🖼️ UI Wireframes:** Platform architectural blueprints in [docs/UI_Wireframes.md](./docs/UI_Wireframes.md).
+*   **📋 Task Division:** Roadmap and team responsibility breakdown in [docs/Task_Division.md](./docs/Task_Division.md).
 
 ---
 

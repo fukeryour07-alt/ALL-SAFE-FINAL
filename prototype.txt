@@ -1,0 +1,57 @@
+PROJECT NAME: ALL SAFE SOC (v3.0.0)
+TYPE: Advanced Cyber Threat Intelligence & Security Operations Center (SOC) Platform
+
+1. CORE OVERVIEW
+-----------------
+ALL SAFE SOC is a comprehensive, multi-source cybersecurity platform designed to aggregate, analyze, and visualize real-time cyber threats. It features a modern backend built with Python and FastAPI, integrating with top-tier threat intelligence APIs, OSINT tools, and AI models to provide actionable insights.
+
+2. KEY FEATURES & CAPABILITIES
+-------------------------------
+A. Real-Time Global Threat Detection (Live Attack Map)
+   - Aggregates live threat feeds from multiple global sources.
+   - Streams data instantly to the frontend via WebSockets (/ws/threats).
+   - Features a Simulated Honeybot Network to project dynamic, realistic visualization of cyber-attacks (Port Scans, DDoS, Ransomware, etc.) across the globe.
+
+B. Multi-Source Threat Intelligence Engine ("Beast Mode")
+   - AlienVault OTX: Global indicator feeds and malicious pulses.
+   - AbuseIPDB: Community-driven IP abuse confidence scoring.
+   - ThreatFox: IOCs (Indicators of Compromise) for malware and botnets.
+   - HoneyDB: Real-time honeypot hits.
+   - VirusTotal (Core Engine): Deep static/dynamic analysis of files, domains, IPs, and URLs.
+
+C. AI-Powered Analysis (Gemini & Groq LLaMA)
+   - Primary AI: Google Gemini (2.5 Flash / 2.0 Flash) with key rotation.
+   - Fallback AI: Groq (LLaMA 3.3 70B / 3.1 8B).
+   - Automatically generates professional, concise threat summaries, risk assessments, and exact recommendations for any scanned entity.
+
+D. Comprehensive Scanning Suite
+   - IP Scanner: Correlates intel from OTX, AbuseIPDB, ThreatFox, VirusTotal, Shodan, WHOIS, and Nmap.
+   - URL & Domain Scanner: Reputation checking, categorization, and malicious content detection.
+   - File & Hash Scanner: Deep malware analysis via SHA-256 cloud lookups and static file inspection.
+   - Phone OSINT Scanner: Caller ID, global region parsing, spam scoring, and direct links to OSINT databases (ShouldIAnswer, NumLooker, Sync.me).
+   - Identity / Breach Scanner: Checks email addresses against known data breaches (e.g., via XposedOrNot).
+   - Job Scam Detector: Uses localized rule-based regex patterns (salary claims, telegram/whatsapp mentions, upfront fees) combined with an AI reasoning engine to flag fraudulent job offers.
+
+3. TECH STACK & ARCHITECTURE
+-----------------------------
+Backend Layer: Python 3, FastAPI, Uvicorn 
+Database: SQLite3 (Local scan history and telemetry logging)
+Networking/Concurrency: Asyncio, HTTPX, WebSockets
+AI Framework: google-genai SDK, Groq SDK
+External Threat APIs: 
+  - VirusTotal API
+  - AlienVault OTX API
+  - AbuseIPDB API
+  - ThreatFox API
+  - HoneyDB API
+
+4. USE CASES
+-------------
+- SOC Analysts performing rapid triage on suspicious IPs, domains, files, or threat feeds.
+- Security teams needing a global "glasspane" visualization of attack vectors for situational awareness.
+- Regular users verifying if a job offer, phone number, email, or unverified link is safe from phishing or scams.
+
+5. GROWTH & ROADMAP
+--------------------
+- Ongoing integration with Wazuh SIEM for endpoint correlation.
+- Advanced automated incident response execution hooks.

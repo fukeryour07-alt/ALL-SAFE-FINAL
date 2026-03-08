@@ -6,10 +6,14 @@ const tabs = [
     { id: 'scanner', label: 'SCAN', key: 'S' },
     { id: 'livemap', label: 'MAP', key: 'M' },
     { id: 'dashboard', label: 'INTEL', key: 'I' },
+    { id: 'inbox', label: 'AI INBOX', key: 'X', alert: true },
     { id: 'crypto', label: 'VAULT', key: 'V' },
     { id: 'news', label: 'NEWS', key: 'N' },
     { id: 'history', label: 'LOGS', key: 'L' },
     { id: 'jobscam', label: 'JOB SCAM', key: 'J', alert: true },
+    { id: 'cve', label: 'CVE', key: 'D' },
+    { id: 'encyclopedia', label: 'THREATS', key: 'E' },
+    { id: 'report', label: 'REPORT', key: 'R', alert: true },
 ];
 
 export default function Navbar({ page, nav, scrolled, cmdOpen, threatScore }) {
@@ -64,13 +68,13 @@ export default function Navbar({ page, nav, scrolled, cmdOpen, threatScore }) {
                             whileTap={{ scale: .95 }}
                             title={`Shortcut: ${t.key}`}
                             style={{
-                                padding: '7px 14px', borderRadius: 'var(--r-full)', border: 'none',
+                                padding: '6px 13px', borderRadius: 'var(--r-full)', border: 'none',
                                 background: page === t.id
                                     ? (t.alert ? 'var(--red)' : 'var(--cyan)')
                                     : 'transparent',
                                 color: page === t.id ? '#000' : (t.alert ? 'var(--red)' : 'var(--text-2)'),
-                                fontSize: 11, fontWeight: 700, letterSpacing: '.08em',
-                                fontFamily: 'Space Grotesk, sans-serif',
+                                fontSize: 11, fontWeight: 700, letterSpacing: '.05em',
+                                fontFamily: 'inherit',
                                 transition: 'color .25s ease',
                                 position: 'relative',
                             }}
@@ -84,7 +88,7 @@ export default function Navbar({ page, nav, scrolled, cmdOpen, threatScore }) {
                                     layoutId="active-nav"
                                     style={{
                                         position: 'absolute', inset: 0,
-                                        background: 'var(--cyan)',
+                                        background: t.alert ? 'var(--red)' : 'var(--cyan)',
                                         borderRadius: 'var(--r-full)', zIndex: -1,
                                     }}
                                     transition={{ type: 'spring', stiffness: 380, damping: 32 }}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ArrowRight, Shield, Globe, Hash, Upload, Lock, Map, BarChart2, Radio, Clock, Zap, X, Command, Briefcase } from 'lucide-react';
+import { Search, ArrowRight, Shield, Globe, Hash, Upload, Lock, Map, BarChart2, Radio, Clock, Zap, X, Command, Briefcase, BookOpen, Server, Siren } from 'lucide-react';
 
 const COMMANDS = [
     { id: 'scanner-url', label: 'Scan URL', desc: 'Analyze a URL for malware', icon: Globe, page: 'scanner', color: 'var(--cyan)' },
@@ -8,6 +8,9 @@ const COMMANDS = [
     { id: 'scanner-hash', label: 'Hash Lookup', desc: 'Check a SHA-256 or MD5 hash', icon: Hash, page: 'scanner', color: 'var(--cyan)' },
     { id: 'scanner-ip', label: 'IP Scan', desc: 'Check an IP address reputation', icon: Shield, page: 'scanner', color: 'var(--cyan)' },
     { id: 'jobscam', label: 'Job Scam Detector', desc: 'Analyze job offers for employment fraud', icon: Briefcase, page: 'jobscam', color: 'var(--red)' },
+    { id: 'cve', label: 'CVE Search', desc: 'Global vulnerability database lookup', icon: Server, page: 'cve', color: 'var(--green)' },
+    { id: 'encyclopedia', label: 'Threat Encyclopedia', desc: 'Learn about common cyber attacks', icon: BookOpen, page: 'encyclopedia', color: 'var(--violet)' },
+    { id: 'report', label: 'Report Cybercrime', desc: 'India emergency fraud reporting guide', icon: Siren, page: 'report', color: '#ef4444' },
     { id: 'livemap', label: 'Live Threat Map', desc: 'View real-time global attacks', icon: Map, page: 'livemap', color: 'var(--green)' },
     { id: 'dashboard', label: 'Intel Dashboard', desc: 'SOC threat intelligence center', icon: BarChart2, page: 'dashboard', color: '#ffb830' },
     { id: 'crypto', label: 'Data Vault', desc: 'Encrypt, decrypt, hash data', icon: Lock, page: 'crypto', color: 'var(--violet)' },

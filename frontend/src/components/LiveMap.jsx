@@ -281,29 +281,27 @@ export default function LiveMap() {
                         const tgt = tgtPool[Math.floor(Math.random() * tgtPool.length)];
 
                         const uid = Date.now() + Math.random();
-                        const dur = isCritical ? 2800 : isHigh ? 2200 : 1600;
+                        const dur = isCritical ? 3500 : isHigh ? 2800 : 2000;
 
                         const arc = {
                             id: uid,
                             startLat: src.lat, startLng: src.lng,
                             endLat: tgt.lat, endLng: tgt.lng,
-                            color: isCritical
-                                ? [`${atk.color}00`, atk.color]
-                                : [`${atk.color}00`, atk.color],
-                            stroke: isCritical ? 2.0 : isHigh ? 1.2 : 0.6,
-                            dashLen: isCritical ? 1.0 : 0.6,
-                            dashGap: isCritical ? 0.05 : 0.25,
+                            color: [`${atk.color}00`, atk.color],
+                            stroke: isCritical ? 2.5 : isHigh ? 1.5 : 0.8,
+                            dashLen: isCritical ? 0.9 : 0.5,
+                            dashGap: 0.1,
                             animTime: dur,
-                            altitude: isCritical ? 0.45 : isHigh ? 0.32 : 0.22,
+                            altitude: isCritical ? 0.55 : isHigh ? 0.4 : 0.25,
                         };
 
                         const ring = {
                             id: uid,
                             lat: tgt.lat, lng: tgt.lng,
                             color: atk.color,
-                            maxR: isCritical ? 7 : isHigh ? 4.5 : 2.5,
+                            maxR: isCritical ? 9 : isHigh ? 5.5 : 3.5,
                             speed: isCritical ? 3.0 : 1.8,
-                            repeat: isCritical ? 500 : 900,
+                            repeat: 700,
                         };
 
                         const blocked = threat.risk_score > 50;
@@ -339,7 +337,7 @@ export default function LiveMap() {
                         setTimeout(() => {
                             setArcsData(prev => prev.filter(a => a.id !== uid));
                             setRingsData(prev => prev.filter(r => r.id !== uid));
-                        }, dur + 600);
+                        }, dur + 1000);
                     }
                 } catch (e) { console.error('WS Error:', e); }
             };
@@ -377,7 +375,8 @@ export default function LiveMap() {
     const totalAllCats = Object.values(catCounts).reduce((a, b) => a + b, 0) || 1;
 
     return (
-        <section style={{ minHeight: '100vh', paddingTop: 96, paddingBottom: 60 }}>
+        <section style={{ minHeight: '100vh', paddingTop: 96, paddingBottom: 60, position: 'relative' }}>
+            <div className="map-bg-glow" />
             <div className="container" style={{ maxWidth: '1440px' }}>
 
                 {/* ── HEADER ── */}
@@ -390,9 +389,6 @@ export default function LiveMap() {
                         <h1 className="syne" style={{ fontSize: 'clamp(28px,4.5vw,50px)', fontWeight: 900, letterSpacing: '-.03em' }}>
                             Global <span className="glow-text">Threat Matrix</span>
                         </h1>
-                        <p style={{ color: 'var(--text-2)', fontSize: 13, marginTop: 4 }}>
-                            Detecting Malware • Exploits • Phishing • Port Scans • DDoS • Ransomware across {NODES.length} global nodes
-                        </p>
                     </div>
 
                     {/* DEFCON badge */}
@@ -497,12 +493,12 @@ export default function LiveMap() {
                                 height={dimensions.height}
                                 globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
                                 bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-                                atmosphereColor="#00c4ff"
-                                atmosphereAltitude={0.18}
+                                atmosphereColor="#00f5ff"
+                                atmosphereAltitude={0.12}
                                 hexPolygonsData={countriesData}
                                 hexPolygonResolution={3}
                                 hexPolygonMargin={0.7}
-                                hexPolygonColor={() => 'rgba(0,245,255,0.04)'}
+                                hexPolygonColor={() => 'rgba(0,245,255,0.02)'}
                                 arcsData={arcsData}
                                 arcColor={d => d.color}
                                 arcDashLength={d => d.dashLen ?? 0.7}
@@ -511,29 +507,11 @@ export default function LiveMap() {
                                 arcStroke={d => d.stroke ?? 0.8}
                                 arcAltitude={d => d.altitude ?? 0.3}
                                 ringsData={ringsData}
-                                ringColor={d => `${d.color}bb`}
+                                ringColor={d => `${d.color}cc`}
                                 ringMaxRadius={d => d.maxR ?? 4}
                                 ringPropagationSpeed={d => d.speed ?? 2}
                                 ringRepeatPeriod={d => d.repeat ?? 800}
                             />
-                        </div>
-
-                        {/* Ticker */}
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 34, background: 'rgba(255,46,91,0.08)', borderTop: '1px solid rgba(255,46,91,0.18)', zIndex: 20, display: 'flex', alignItems: 'center', padding: '0 14px', overflow: 'hidden' }}>
-                            <div style={{ color: defconColor, fontSize: 9, fontWeight: 900, marginRight: 14, whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono,monospace', letterSpacing: '.1em' }}>
-                                ⚠ DEFCON-{defconLevel}
-                            </div>
-                            <div style={{ flex: 1, overflow: 'hidden' }}>
-                                <div className="mono" style={{
-                                    fontSize: 9, color: 'var(--text-2)',
-                                    display: 'inline-block', whiteSpace: 'nowrap',
-                                    animation: 'ticker-slide 35s linear infinite',
-                                }}>
-                                    {attackLogs.slice(0, 15).map(l =>
-                                        ` ⚡ [${l.category}:${l.severity}] ${l.type} — ${l.srcName} → ${l.tgtName} — SRC: ${l.srcIP} `
-                                    ).join(' // ')}
-                                </div>
-                            </div>
                         </div>
                     </div>
 
