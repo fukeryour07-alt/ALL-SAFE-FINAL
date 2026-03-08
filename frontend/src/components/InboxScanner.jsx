@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, KeyRound, ShieldCheck, ShieldAlert, AlertTriangle, EyeOff, Eye, Loader2, ArrowRight, UserCircle2, Building2, CheckCircle2, Megaphone, Inbox, ArrowLeft, Fingerprint, Zap, Radar, Upload, Link } from 'lucide-react';
+import {
+    Mail, KeyRound, ShieldCheck, ShieldAlert, AlertTriangle, EyeOff, Eye,
+    Loader2, ArrowRight, UserCircle2, Building2, CheckCircle2, Megaphone,
+    Inbox, ArrowLeft, Fingerprint, Zap, Radar, Link, ExternalLink, Info
+} from 'lucide-react';
 import { toast } from './Toast';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
 const API = 'https://all-safe-final-j8mc.onrender.com';
 
+/* ─── Icon Components ───────────────────────────────────────────────────── */
 const GoogleIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -31,29 +36,59 @@ const YahooIcon = () => (
     </svg>
 );
 
+/* ─── Google Login Button (must be inside GoogleOAuthProvider context) ───── */
 const RealGoogleLoginBtn = ({ onComplete, disabled }) => {
     const login = useGoogleLogin({
         onSuccess: tokenResponse => {
             onComplete({
-                email: 'Your Google Account', // Gmail API infers from Token
+                email: 'Your Google Account',
                 provider: 'Google',
                 token: tokenResponse.access_token,
                 imap_server: 'oauth',
             });
         },
-        onError: () => toast.error("Login Failed", "Google authentication cancelled or failed"),
+        onError: (err) => {
+            console.error('Google OAuth error:', err);
+            if (err?.error === 'idpiframe_initialization_failed' || err?.error === 'popup_closed_by_user') {
+                toast.error("OAuth Domain Error", "Your site domain is not authorized in Google Cloud Console. Add your Vercel URL to 'Authorized JavaScript Origins'.");
+            } else if (err?.error === 'access_denied') {
+                toast.error("Access Denied", "You denied the Gmail permission request. Please allow access to scan your inbox.");
+            } else {
+                toast.error("Login Failed", `Google authentication error: ${err?.error || 'Unknown'}. Check browser console for details.`);
+            }
+        },
         scope: "https://www.googleapis.com/auth/gmail.readonly"
     });
 
     return (
-        <button onClick={() => { if (!disabled) login(); else toast.error("Agreement Required", "Please accept the terms and conditions first."); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '18px', background: disabled ? 'rgba(255,255,255,0.6)' : '#ffffff', color: '#1f2937', borderRadius: 16, fontSize: 16, fontWeight: 600, border: 'none', transition: 'all 0.2s', width: '100%', boxShadow: '0 4px 12px rgba(255,255,255,0.05)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.7 : 1 }} onMouseEnter={e => { if (!disabled) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 16px rgba(255,255,255,0.1)'; } }} onMouseLeave={e => { if (!disabled) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,255,255,0.05)'; } }}>
+        <button
+            onClick={() => {
+                if (!disabled) {
+                    login();
+                } else {
+                    toast.error("Agreement Required", "Please accept the terms and conditions first.");
+                }
+            }}
+            style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                padding: '16px 20px',
+                background: disabled ? 'rgba(255,255,255,0.5)' : '#ffffff',
+                color: '#1f2937', borderRadius: 14, fontSize: 15, fontWeight: 700,
+                border: 'none', transition: 'all 0.25s', width: '100%',
+                boxShadow: disabled ? 'none' : '0 4px 20px rgba(255,255,255,0.15)',
+                cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1
+            }}
+            onMouseEnter={e => { if (!disabled) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,255,255,0.2)'; } }}
+            onMouseLeave={e => { if (!disabled) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(255,255,255,0.15)'; } }}
+        >
             <GoogleIcon /> Continue with Google
         </button>
     );
 };
 
+/* ─── Main Content Component ─────────────────────────────────────────────── */
 const InboxScannerContent = () => {
-    const [step, setStep] = useState('provider'); // provider, credentials, scanning, complete
+    const [step, setStep] = useState('provider');
     const [provider, setProvider] = useState(null);
     const [credentials, setCredentials] = useState({ email: '', password: '', imap_server: '', is_oauth: false });
     const [emails, setEmails] = useState([]);
@@ -65,7 +100,7 @@ const InboxScannerContent = () => {
         setProvider(authData.provider);
         const creds = {
             email: authData.email,
-            password: authData.token, // For OAuth, token is passed in password field
+            password: authData.token,
             imap_server: authData.imap_server,
             is_oauth: true
         };
@@ -75,7 +110,11 @@ const InboxScannerContent = () => {
 
     const initiateLegacyProvider = (providerName) => {
         setProvider(providerName);
-        setCredentials({ email: '', password: '', imap_server: providerName === 'Microsoft' ? 'outlook.office365.com' : 'imap.mail.yahoo.com', is_oauth: false });
+        setCredentials({
+            email: '', password: '',
+            imap_server: providerName === 'Microsoft' ? 'outlook.office365.com' : 'imap.mail.yahoo.com',
+            is_oauth: false
+        });
         setStep('credentials');
     };
 
@@ -93,20 +132,18 @@ const InboxScannerContent = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
             if (!res.ok) {
-                const err = await res.json();
+                const err = await res.json().catch(() => ({ detail: 'Server error. Check backend logs.' }));
                 throw new Error(err.detail || 'Connection failed.');
             }
-
             const data = await res.json();
             if (data.status === 'success') {
                 setEmails(data.emails);
                 setStep('complete');
                 setSelectedEmailIdx(data.emails.length > 0 ? 0 : null);
-                toast.success("Analysis Complete", `Successfully scanned ${data.emails.length} email(s).`);
+                toast.success("Analysis Complete", `Scanned ${data.emails.length} email(s) successfully.`);
             } else {
-                throw new Error("Invalid response format.");
+                throw new Error("Invalid response format from server.");
             }
         } catch (error) {
             toast.error("Analysis Error", error.message);
@@ -114,270 +151,573 @@ const InboxScannerContent = () => {
         }
     };
 
-    const getCategoryStyles = (category, score) => {
-        if (score >= 80 || category === 'Scam') return { col: 'var(--red)', bg: 'rgba(255,46,91,.08)', icon: <ShieldAlert size={18} color="var(--red)" /> };
-        if (score >= 40 || category === 'Spam') return { col: '#ffb830', bg: 'rgba(255,184,48,.08)', icon: <AlertTriangle size={18} color="#ffb830" /> };
-        if (category === 'Company') return { col: 'var(--cyan)', bg: 'rgba(0,245,255,.08)', icon: <Building2 size={18} color="var(--cyan)" /> };
-        if (category === 'Personal') return { col: 'var(--violet)', bg: 'rgba(124,58,237,.08)', icon: <UserCircle2 size={18} color="var(--violet)" /> };
-        if (category === 'Newsletter') return { col: '#94a3b8', bg: 'rgba(255,255,255,.05)', icon: <Megaphone size={18} color="#94a3b8" /> };
-        return { col: 'var(--green)', bg: 'rgba(0,255,136,.06)', icon: <ShieldCheck size={18} color="var(--green)" /> };
+    const resetSession = () => {
+        setStep('provider');
+        setCredentials({ email: '', password: '', imap_server: '', is_oauth: false });
+        setEmails([]);
+        setAgreed(false);
+        setSelectedEmailIdx(null);
     };
 
-    // Summary calculations
+    const getCategoryStyles = (category, score) => {
+        if (score >= 80 || category === 'Scam') return { col: '#ff2e5b', bg: 'rgba(255,46,91,0.10)', icon: <ShieldAlert size={16} color="#ff2e5b" /> };
+        if (score >= 40 || category === 'Spam') return { col: '#ffb830', bg: 'rgba(255,184,48,0.10)', icon: <AlertTriangle size={16} color="#ffb830" /> };
+        if (category === 'Company') return { col: '#00f5ff', bg: 'rgba(0,245,255,0.08)', icon: <Building2 size={16} color="#00f5ff" /> };
+        if (category === 'Personal') return { col: '#a78bfa', bg: 'rgba(167,139,250,0.10)', icon: <UserCircle2 size={16} color="#a78bfa" /> };
+        if (category === 'Newsletter') return { col: '#94a3b8', bg: 'rgba(148,163,184,0.08)', icon: <Megaphone size={16} color="#94a3b8" /> };
+        return { col: '#00ff88', bg: 'rgba(0,255,136,0.08)', icon: <ShieldCheck size={16} color="#00ff88" /> };
+    };
+
     const scamCount = emails.filter(e => e.category === 'Scam').length;
     const spamCount = emails.filter(e => e.category === 'Spam').length;
-    const highRiskCount = emails.filter(e => e.risk_score >= 80).length;
-    const safeCount = emails.length - scamCount - spamCount;
     const totalLinks = emails.reduce((acc, curr) => acc + (curr.links_found || 0), 0);
-    const averageRisk = emails.length > 0 ? (emails.reduce((acc, curr) => acc + curr.risk_score, 0) / emails.length).toFixed(0) : 0;
+    const averageRisk = emails.length > 0
+        ? (emails.reduce((acc, curr) => acc + curr.risk_score, 0) / emails.length).toFixed(0)
+        : 0;
+    const safeCount = emails.length - scamCount - spamCount;
 
     return (
         <section className="section-padding" style={{ minHeight: '100vh', position: 'relative' }}>
             <div className="container">
-                <div style={{ textAlign: 'center', marginBottom: 60, maxWidth: 700, margin: '0 auto 60px' }}>
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ marginBottom: 16 }}>
-                        <span className="badge badge-medium" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 20, letterSpacing: '0.05em' }}>
-                            <Zap size={14} color="#ff7832" /> ADVANCED AI MAIL PROFILER
+
+                {/* ─── Page Header ─── */}
+                <div style={{ textAlign: 'center', marginBottom: 56, maxWidth: 680, margin: '0 auto 56px' }}>
+                    <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '7px 16px', background: 'rgba(255,120,50,0.1)',
+                            border: '1px solid rgba(255,120,50,0.25)', borderRadius: 20,
+                            fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+                            color: '#ff7832', marginBottom: 20, textTransform: 'uppercase'
+                        }}>
+                            <Zap size={12} /> AI Mail Profiler
                         </span>
                     </motion.div>
-                    <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} style={{ fontSize: 'clamp(38px, 5vw, 56px)', lineHeight: 1.1, marginBottom: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>
-                        Autonomous <span className="gradient-text" style={{ background: 'linear-gradient(135deg, var(--cyan), var(--violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Email Triage</span>
+                    <motion.h1
+                        initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
+                        style={{ fontSize: 'clamp(34px, 5vw, 54px)', lineHeight: 1.15, marginBottom: 18, fontWeight: 800, letterSpacing: '-0.025em' }}
+                    >
+                        Autonomous{' '}
+                        <span style={{ background: 'linear-gradient(135deg, #00f5ff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            Email Triage
+                        </span>
                     </motion.h1>
-                    <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} style={{ color: 'var(--text-2)', fontSize: 18, lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-                        Connect your inbox securely. Our powerful neural pipeline parses incoming payloads to extract and neutralize unseen phishing threats before you interact with them.
+                    <motion.p
+                        initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+                        style={{ color: 'var(--text-2)', fontSize: 17, lineHeight: 1.75, maxWidth: 600, margin: '0 auto' }}
+                    >
+                        Securely connect your inbox. Our AI neural pipeline extracts and neutralizes phishing threats before you ever open them.
                     </motion.p>
                 </div>
 
                 <AnimatePresence mode="wait">
+
+                    {/* ─── Step: Provider Selection ─── */}
                     {step === 'provider' && (
-                        <motion.div key="provider" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
-                            <div className="premium-glass" style={{ maxWidth: 500, margin: '0 auto', padding: '48px 40px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', borderRadius: 24 }}>
-                                <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: 'inset 0 0 20px rgba(0,245,255,0.05)' }}>
-                                    <Fingerprint size={32} color="var(--cyan)" />
-                                </div>
-                                <h3 style={{ fontSize: 24, marginBottom: 12, fontWeight: 600 }}>Secure Synchronization</h3>
-                                <p style={{ fontSize: 15, color: 'var(--text-3)', marginBottom: 40, lineHeight: 1.5 }}>Use OAuth to securely let AI analyze your inbox for hidden threats. Passwords are never stored.</p>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: '18px 20px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 8 }}>
-                                        <input type="checkbox" id="terms" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} style={{ marginTop: 4, cursor: 'pointer', width: 20, height: 20, accentColor: 'var(--cyan)' }} />
-                                        <label htmlFor="terms" style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.5, cursor: 'pointer' }}>
-                                            I agree to the <a href="#" style={{ color: 'var(--cyan)', textDecoration: 'none', fontWeight: 500 }}>Terms & Conditions</a> and <a href="#" style={{ color: 'var(--cyan)', textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</a>. I understand that AI will read my inbox locally to extract phishing intents.
-                                        </label>
+                        <motion.div
+                            key="provider"
+                            initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.25 }}
+                        >
+                            <div className="premium-glass" style={{
+                                maxWidth: 480, margin: '0 auto', padding: '44px 40px',
+                                borderRadius: 24, boxShadow: '0 24px 60px rgba(0,0,0,0.5)'
+                            }}>
+                                {/* Header Icon */}
+                                <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                                    <div style={{
+                                        width: 60, height: 60, borderRadius: 18,
+                                        background: 'rgba(0,245,255,0.06)', border: '1px solid rgba(0,245,255,0.15)',
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        marginBottom: 16, boxShadow: 'inset 0 0 24px rgba(0,245,255,0.06)'
+                                    }}>
+                                        <Fingerprint size={28} color="#00f5ff" />
                                     </div>
+                                    <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-1)' }}>Secure Synchronization</h3>
+                                    <p style={{ fontSize: 14, color: 'var(--text-3)', lineHeight: 1.6, maxWidth: 340, margin: '0 auto' }}>
+                                        OAuth keeps your credentials safe. Passwords are <strong style={{ color: 'var(--text-2)' }}>never stored</strong> or transmitted.
+                                    </p>
+                                </div>
 
-                                    {/* REAL GOOGLE OAUTH FLOW */}
+                                {/* Terms Checkbox */}
+                                <div style={{
+                                    display: 'flex', alignItems: 'flex-start', gap: 12,
+                                    background: 'rgba(0,0,0,0.25)', padding: '16px 18px',
+                                    borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)',
+                                    marginBottom: 20, cursor: 'pointer'
+                                }} onClick={() => setAgreed(v => !v)}>
+                                    <input
+                                        type="checkbox" id="terms" checked={agreed}
+                                        onChange={e => setAgreed(e.target.checked)}
+                                        style={{ marginTop: 2, width: 18, height: 18, accentColor: '#00f5ff', cursor: 'pointer', flexShrink: 0 }}
+                                        onClick={e => e.stopPropagation()}
+                                    />
+                                    <label htmlFor="terms" style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, cursor: 'pointer' }}>
+                                        I agree to the{' '}
+                                        <a href="#" style={{ color: '#00f5ff', textDecoration: 'none' }}>Terms & Conditions</a>{' '}
+                                        and{' '}
+                                        <a href="#" style={{ color: '#00f5ff', textDecoration: 'none' }}>Privacy Policy</a>.{' '}
+                                        I understand AI will read my inbox to extract phishing threats.
+                                    </label>
+                                </div>
+
+                                {/* Provider Buttons */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {/* Google OAuth */}
                                     <RealGoogleLoginBtn onComplete={handleOAuthComplete} disabled={!agreed} />
 
-                                    <button onClick={() => { if (agreed) initiateLegacyProvider('Microsoft'); else toast.error('Agreement Required', 'Please accept the terms and conditions first.'); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '18px', background: 'rgba(255,255,255,0.03)', color: '#fff', borderRadius: 16, fontSize: 16, fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)', transition: 'all 0.2s', width: '100%', opacity: agreed ? 1 : 0.6, cursor: agreed ? 'pointer' : 'not-allowed' }} onMouseEnter={e => { if (agreed) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }} onMouseLeave={e => { if (agreed) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}>
+                                    {/* Microsoft */}
+                                    <button
+                                        onClick={() => agreed ? initiateLegacyProvider('Microsoft') : toast.error('Agreement Required', 'Accept terms and conditions first.')}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                                            padding: '16px 20px', background: 'rgba(255,255,255,0.04)',
+                                            color: '#fff', borderRadius: 14, fontSize: 15, fontWeight: 600,
+                                            border: '1px solid rgba(255,255,255,0.1)', transition: 'all 0.2s',
+                                            width: '100%', opacity: agreed ? 1 : 0.5, cursor: agreed ? 'pointer' : 'not-allowed'
+                                        }}
+                                        onMouseEnter={e => { if (agreed) e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                        onMouseLeave={e => { if (agreed) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                                    >
                                         <MicrosoftIcon /> Continue with Microsoft
                                     </button>
 
-                                    <button onClick={() => { if (agreed) initiateLegacyProvider('Yahoo'); else toast.error('Agreement Required', 'Please accept the terms and conditions first.'); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '18px', background: 'rgba(124,58,237,0.1)', color: '#fff', borderRadius: 16, fontSize: 16, fontWeight: 600, border: '1px solid rgba(124,58,237,0.2)', transition: 'all 0.2s', width: '100%', opacity: agreed ? 1 : 0.6, cursor: agreed ? 'pointer' : 'not-allowed' }} onMouseEnter={e => { if (agreed) e.currentTarget.style.background = 'rgba(124,58,237,0.2)' }} onMouseLeave={e => { if (agreed) e.currentTarget.style.background = 'rgba(124,58,237,0.1)' }}>
+                                    {/* Yahoo */}
+                                    <button
+                                        onClick={() => agreed ? initiateLegacyProvider('Yahoo') : toast.error('Agreement Required', 'Accept terms and conditions first.')}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                                            padding: '16px 20px', background: 'rgba(96,1,210,0.1)',
+                                            color: '#fff', borderRadius: 14, fontSize: 15, fontWeight: 600,
+                                            border: '1px solid rgba(124,58,237,0.25)', transition: 'all 0.2s',
+                                            width: '100%', opacity: agreed ? 1 : 0.5, cursor: agreed ? 'pointer' : 'not-allowed'
+                                        }}
+                                        onMouseEnter={e => { if (agreed) e.currentTarget.style.background = 'rgba(124,58,237,0.2)'; }}
+                                        onMouseLeave={e => { if (agreed) e.currentTarget.style.background = 'rgba(96,1,210,0.1)'; }}
+                                    >
                                         <YahooIcon /> Continue with Yahoo
                                     </button>
-
                                 </div>
-                                <div style={{ marginTop: 32, fontSize: 13, color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                    <ShieldCheck size={14} color="var(--green)" /> Protected by OAuth 2.0 API Extractor
+
+                                {/* Domain Notice */}
+                                <div style={{
+                                    marginTop: 20,
+                                    background: 'rgba(255,184,48,0.08)',
+                                    border: '1px solid rgba(255,184,48,0.2)',
+                                    borderRadius: 10, padding: '12px 16px',
+                                    display: 'flex', gap: 10, alignItems: 'flex-start'
+                                }}>
+                                    <Info size={14} color="#ffb830" style={{ flexShrink: 0, marginTop: 1 }} />
+                                    <p style={{ fontSize: 12, color: '#ffb830', margin: 0, lineHeight: 1.5 }}>
+                                        <strong>Google OAuth setup required:</strong> Add your Vercel domain to{' '}
+                                        <strong>Authorized JavaScript Origins</strong> in{' '}
+                                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer"
+                                            style={{ color: '#ffd060', textDecoration: 'underline' }}>
+                                            Google Cloud Console
+                                        </a>{' '}
+                                        for login to work on production.
+                                    </p>
+                                </div>
+
+                                {/* Footer */}
+                                <div style={{
+                                    marginTop: 20, fontSize: 12, color: 'var(--text-3)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                                }}>
+                                    <ShieldCheck size={13} color="#00ff88" />
+                                    Protected by OAuth 2.0 · Read-only access
                                 </div>
                             </div>
                         </motion.div>
                     )}
 
-
-
+                    {/* ─── Step: Legacy Credentials ─── */}
                     {step === 'credentials' && (
-                        <motion.div key="credentials" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }}>
-                            <form onSubmit={handleManualScan} className="premium-glass" style={{ maxWidth: 480, margin: '0 auto', padding: '40px', borderRadius: 24, position: 'relative' }}>
-                                <button type="button" onClick={() => setStep('provider')} style={{ position: 'absolute', top: 24, left: 24, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-2)', padding: '8px 14px', borderRadius: '20px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
-                                    <ArrowLeft size={16} /> Back
+                        <motion.div
+                            key="credentials"
+                            initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.2 }}
+                        >
+                            <form
+                                onSubmit={handleManualScan}
+                                className="premium-glass"
+                                style={{ maxWidth: 460, margin: '0 auto', padding: '40px', borderRadius: 24, position: 'relative' }}
+                            >
+                                <button
+                                    type="button" onClick={() => setStep('provider')}
+                                    style={{
+                                        position: 'absolute', top: 20, left: 20,
+                                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                        color: 'var(--text-2)', padding: '7px 14px', borderRadius: 20,
+                                        fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
+                                        cursor: 'pointer', transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                >
+                                    <ArrowLeft size={15} /> Back
                                 </button>
 
-                                <div style={{ textAlign: 'center', marginTop: 20, marginBottom: 32 }}>
-                                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
+                                <div style={{ textAlign: 'center', marginTop: 28, marginBottom: 28 }}>
+                                    <div style={{
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        width: 52, height: 52, borderRadius: 14,
+                                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                                        marginBottom: 14
+                                    }}>
                                         {provider === 'Microsoft' ? <MicrosoftIcon /> : <YahooIcon />}
                                     </div>
-                                    <h3 style={{ fontSize: 22, color: 'var(--text-1)' }}>Legacy App Password</h3>
-                                    <p style={{ fontSize: 14, color: 'var(--text-3)', marginTop: 8 }}>OAuth is recommended. Entering App Passwords bypasses modern security flows.</p>
+                                    <h3 style={{ fontSize: 20, color: 'var(--text-1)', fontWeight: 700, marginBottom: 6 }}>App Password Login</h3>
+                                    <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.55 }}>
+                                        Use a 16-character App Password from your account security settings.
+                                    </p>
                                 </div>
 
-                                <div style={{ marginBottom: 24 }}>
-                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-2)', marginBottom: 10, letterSpacing: '.05em' }}>EMAIL ADDRESS</label>
-                                    <div className="input-group" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '4px 16px' }}>
-                                        <Mail size={18} color="var(--text-3)" />
+                                <div style={{ marginBottom: 18 }}>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+                                        Email Address
+                                    </label>
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                        background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 12, padding: '0 16px'
+                                    }}>
+                                        <Mail size={16} color="var(--text-3)" />
                                         <input
-                                            style={{ flex: 1, padding: '14px 12px', background: 'transparent', border: 'none', color: '#fff', fontSize: 15 }}
-                                            type="email" placeholder={`yourname@${provider.toLowerCase()}.com`}
-                                            value={credentials.email} onChange={e => setCredentials({ ...credentials, email: e.target.value })} required autoFocus
+                                            style={{ flex: 1, padding: '14px 0', background: 'transparent', border: 'none', color: '#fff', fontSize: 14, outline: 'none' }}
+                                            type="email"
+                                            placeholder={`you@${provider?.toLowerCase()}.com`}
+                                            value={credentials.email}
+                                            onChange={e => setCredentials({ ...credentials, email: e.target.value })}
+                                            required autoFocus
                                         />
                                     </div>
                                 </div>
-                                <div style={{ marginBottom: 36 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                                        <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', letterSpacing: '.05em' }}>APP PASSWORD</label>
-                                    </div>
-                                    <div className="input-group" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '4px 16px' }}>
-                                        <KeyRound size={18} color="var(--text-3)" />
+
+                                <div style={{ marginBottom: 28 }}>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+                                        App Password
+                                    </label>
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                        background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 12, padding: '0 16px'
+                                    }}>
+                                        <KeyRound size={16} color="var(--text-3)" />
                                         <input
-                                            style={{ flex: 1, padding: '14px 12px', background: 'transparent', border: 'none', color: '#fff', fontSize: 15 }}
-                                            type={showPassword ? "text" : "password"} placeholder="16-digit app password"
-                                            value={credentials.password} onChange={e => setCredentials({ ...credentials, password: e.target.value })} required
+                                            style={{ flex: 1, padding: '14px 0', background: 'transparent', border: 'none', color: '#fff', fontSize: 14, outline: 'none' }}
+                                            type={showPassword ? 'text' : 'password'}
+                                            placeholder="xxxx xxxx xxxx xxxx"
+                                            value={credentials.password}
+                                            onChange={e => setCredentials({ ...credentials, password: e.target.value })}
+                                            required
                                         />
-                                        <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ background: 'none', border: 'none', color: 'var(--text-3)', padding: 8, cursor: 'pointer' }}>
-                                            {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            style={{ background: 'none', border: 'none', color: 'var(--text-3)', padding: 6, cursor: 'pointer', lineHeight: 0 }}>
+                                            {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                                         </button>
                                     </div>
                                 </div>
 
-                                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: 15, fontWeight: 700, borderRadius: 12 }}>
-                                    Authenticate & Scan <ArrowRight size={18} />
+                                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '16px', fontSize: 15, fontWeight: 700, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                    Authenticate & Scan <ArrowRight size={17} />
                                 </button>
                             </form>
                         </motion.div>
                     )}
 
+                    {/* ─── Step: Scanning Animation ─── */}
                     {step === 'scanning' && (
-                        <motion.div key="scanning" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ textAlign: 'center', padding: '80px 20px' }}>
-                            <div style={{ position: 'relative', width: 100, height: 100, margin: '0 auto 30px' }}>
-                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px dashed var(--cyan)', opacity: 0.3 }} />
-                                <motion.div animate={{ rotate: -360 }} transition={{ duration: 8, repeat: Infinity, ease: "linear" }} style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: '2px dashed var(--violet)', opacity: 0.3 }} />
-                                <Loader2 size={40} color="var(--cyan)" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} className="spin-slow" />
+                        <motion.div
+                            key="scanning"
+                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            style={{ textAlign: 'center', padding: '80px 20px' }}
+                        >
+                            <div style={{ position: 'relative', width: 96, height: 96, margin: '0 auto 28px' }}>
+                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                                    style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px dashed #00f5ff', opacity: 0.3 }} />
+                                <motion.div animate={{ rotate: -360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                                    style={{ position: 'absolute', inset: 12, borderRadius: '50%', border: '2px dashed #a78bfa', opacity: 0.25 }} />
+                                <Loader2 size={36} color="#00f5ff"
+                                    style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+                                    className="spin-slow" />
                             </div>
-                            <h3 style={{ fontSize: 28, marginBottom: 16, fontWeight: 600 }}>Analyzing Target Data</h3>
-                            <p style={{ color: 'var(--text-3)', maxWidth: 450, margin: '0 auto', lineHeight: 1.6, fontSize: 16 }}>
-                                Extracting components from <span style={{ color: 'var(--cyan)' }}>{provider}</span> stream, identifying IOCs, and passing through LLM security rules.
+                            <h3 style={{ fontSize: 26, marginBottom: 12, fontWeight: 700 }}>Analyzing Inbox</h3>
+                            <p style={{ color: 'var(--text-3)', maxWidth: 400, margin: '0 auto', lineHeight: 1.65, fontSize: 15 }}>
+                                Extracting emails from <span style={{ color: '#00f5ff', fontWeight: 600 }}>{provider}</span>, identifying IOCs, and running through AI threat engine.
                             </p>
                         </motion.div>
                     )}
 
+                    {/* ─── Step: Complete — Dashboard ─── */}
                     {step === 'complete' && emails.length > 0 && selectedEmailIdx !== null && (
-                        <motion.div key="complete" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1400, margin: '0 auto' }}>
-                            {/* Dashboard Header */}
-                            <div className="premium-glass" style={{ padding: '24px 32px', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: 20 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(124,58,237,0.2)' }}>
-                                        <Radar size={24} color="var(--violet)" />
+                        <motion.div
+                            key="complete"
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            style={{ maxWidth: 1400, margin: '0 auto' }}
+                        >
+                            {/* Dashboard Toolbar */}
+                            <div className="premium-glass" style={{
+                                padding: '20px 28px', marginBottom: 20,
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                borderRadius: 18, gap: 16, flexWrap: 'wrap'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                    <div style={{
+                                        width: 44, height: 44, borderRadius: 12,
+                                        background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        <Radar size={22} color="#a78bfa" />
                                     </div>
                                     <div>
-                                        <h2 style={{ fontSize: 24, margin: '0 0 6px', fontWeight: 700, letterSpacing: '-0.01em' }}>AI Threat Dashboard</h2>
-                                        <div style={{ fontSize: 13, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500 }}>
-                                            <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 10px var(--green)' }} /> Stream Analyzed
+                                        <h2 style={{ fontSize: 20, margin: 0, fontWeight: 700, letterSpacing: '-0.01em' }}>AI Threat Dashboard</h2>
+                                        <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 6px #00ff88', display: 'inline-block' }} />
+                                            Stream Analyzed · {emails.length} emails
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', gap: 24, marginRight: 24, background: 'rgba(0,0,0,0.2)', padding: '10px 24px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.05em', marginBottom: 2 }}>TOTAL</div><div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)' }}>{emails.length}</div></div>
-                                        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 11, color: 'var(--red)', letterSpacing: '0.05em', marginBottom: 2 }}>SCAM</div><div style={{ fontSize: 18, fontWeight: 800, color: 'var(--red)' }}>{scamCount}</div></div>
-                                        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 11, color: '#ff7832', letterSpacing: '0.05em', marginBottom: 2 }}>LINKS</div><div style={{ fontSize: 18, fontWeight: 800, color: '#ff7832' }}>{totalLinks}</div></div>
-                                        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.05em', marginBottom: 2 }}>AVG RISK</div><div style={{ fontSize: 18, fontWeight: 800, color: averageRisk > 50 ? 'var(--red)' : 'var(--text-1)' }}>{averageRisk}%</div></div>
-                                    </div>
-                                    <button className="btn-ghost" onClick={() => { setStep('provider'); setCredentials({ email: '', password: '', imap_server: '', is_oauth: false }); setEmails([]); setAgreed(false); }} style={{ fontSize: 14, padding: '12px 24px', borderRadius: 12, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                        End Session
-                                    </button>
+
+                                {/* Stats Row */}
+                                <div style={{ display: 'flex', gap: 20, background: 'rgba(0,0,0,0.2)', padding: '10px 22px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)' }}>
+                                    {[
+                                        { label: 'TOTAL', value: emails.length, color: 'var(--text-1)' },
+                                        { label: 'SCAM', value: scamCount, color: '#ff2e5b' },
+                                        { label: 'SPAM', value: spamCount, color: '#ffb830' },
+                                        { label: 'SAFE', value: safeCount, color: '#00ff88' },
+                                        { label: 'LINKS', value: totalLinks, color: '#ff7832' },
+                                        { label: 'AVG RISK', value: `${averageRisk}%`, color: averageRisk > 50 ? '#ff2e5b' : 'var(--text-1)' },
+                                    ].map(stat => (
+                                        <div key={stat.label} style={{ textAlign: 'center', minWidth: 40 }}>
+                                            <div style={{ fontSize: 10, color: stat.color, letterSpacing: '0.07em', fontWeight: 700, marginBottom: 3 }}>{stat.label}</div>
+                                            <div style={{ fontSize: 18, fontWeight: 800, color: stat.color }}>{stat.value}</div>
+                                        </div>
+                                    ))}
                                 </div>
+
+                                <button
+                                    className="btn-ghost" onClick={resetSession}
+                                    style={{ fontSize: 13, padding: '10px 20px', borderRadius: 10, borderColor: 'rgba(255,255,255,0.12)', whiteSpace: 'nowrap' }}
+                                >
+                                    End Session
+                                </button>
                             </div>
 
-                            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-                                {/* Left: Email Master List */}
-                                <div style={{ flex: '0 0 420px', display: 'flex', flexDirection: 'column', gap: 12, height: 'calc(100vh - 250px)', overflowY: 'auto', paddingRight: 8, scrollbarWidth: 'thin' }}>
+                            {/* Split Pane */}
+                            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+
+                                {/* Left: Email List */}
+                                <div style={{
+                                    flex: '0 0 360px', display: 'flex', flexDirection: 'column', gap: 8,
+                                    height: 'calc(100vh - 280px)', overflowY: 'auto',
+                                    paddingRight: 6, scrollbarWidth: 'thin'
+                                }}>
                                     {emails.map((email, idx) => {
                                         const st = getCategoryStyles(email.category, email.risk_score);
                                         const isSelected = selectedEmailIdx === idx;
                                         return (
-                                            <div key={idx} onClick={() => setSelectedEmailIdx(idx)} className="premium-glass" style={{ padding: '16px 20px', cursor: 'pointer', borderRadius: 16, border: isSelected ? `2px solid ${st.col}` : '1px solid rgba(255,255,255,0.05)', background: isSelected ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)', transition: 'all 0.2s', display: 'flex', gap: 16, alignItems: 'center', opacity: isSelected ? 1 : 0.7 }}>
-                                                <div style={{ width: 44, height: 44, borderRadius: 12, background: st.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${st.col}40` }}>
+                                            <div
+                                                key={idx}
+                                                onClick={() => setSelectedEmailIdx(idx)}
+                                                style={{
+                                                    padding: '14px 16px', cursor: 'pointer', borderRadius: 14,
+                                                    border: isSelected ? `1.5px solid ${st.col}` : '1px solid rgba(255,255,255,0.07)',
+                                                    background: isSelected ? `${st.bg}` : 'rgba(255,255,255,0.02)',
+                                                    transition: 'all 0.2s', display: 'flex', gap: 12, alignItems: 'center'
+                                                }}
+                                            >
+                                                {/* Category Icon */}
+                                                <div style={{
+                                                    width: 38, height: 38, borderRadius: 10,
+                                                    background: st.bg, border: `1px solid ${st.col}30`,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                                }}>
                                                     {st.icon}
                                                 </div>
+                                                {/* Info */}
                                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                                        <span style={{ fontSize: 11, fontWeight: 700, color: st.col, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{email.category}</span>
-                                                        <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>{email.risk_score}% Risk</span>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                        <span style={{ fontSize: 10, fontWeight: 800, color: st.col, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                                            {email.category}
+                                                        </span>
+                                                        <span style={{
+                                                            fontSize: 11, fontWeight: 700,
+                                                            background: email.risk_score >= 70 ? 'rgba(255,46,91,0.15)' : email.risk_score >= 40 ? 'rgba(255,184,48,0.12)' : 'rgba(0,255,136,0.1)',
+                                                            color: email.risk_score >= 70 ? '#ff2e5b' : email.risk_score >= 40 ? '#ffb830' : '#00ff88',
+                                                            padding: '2px 7px', borderRadius: 6
+                                                        }}>
+                                                            {email.risk_score}%
+                                                        </span>
                                                     </div>
-                                                    <h4 style={{ margin: 0, fontSize: 15, color: 'var(--text-1)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.01em' }}>{email.subject}</h4>
-                                                    <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{email.from}</div>
+                                                    <h4 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {email.subject}
+                                                    </h4>
+                                                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {email.from}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        )
+                                        );
                                     })}
                                 </div>
 
-                                {/* Right: Detail View */}
+                                {/* Right: Detail Pane */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     {(() => {
                                         const active = emails[selectedEmailIdx];
                                         const st = getCategoryStyles(active.category, active.risk_score);
                                         return (
                                             <AnimatePresence mode="wait">
-                                                <motion.div key={selectedEmailIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="premium-glass" style={{ padding: 48, borderRadius: 24, borderTop: `4px solid ${st.col}` }}>
-
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
-                                                        <div style={{ flex: 1, paddingRight: 40 }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                                                <div style={{ padding: '6px 14px', background: st.bg, border: `1px solid ${st.col}40`, borderRadius: 10, color: st.col, fontSize: 13, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <motion.div
+                                                    key={selectedEmailIdx}
+                                                    initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                                                    className="premium-glass"
+                                                    style={{ padding: '36px 40px', borderRadius: 22, borderTop: `3px solid ${st.col}` }}
+                                                >
+                                                    {/* Email Header Row */}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, gap: 24 }}>
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            {/* Tags */}
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                                                                <span style={{
+                                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                                    padding: '5px 12px', background: st.bg,
+                                                                    border: `1px solid ${st.col}40`,
+                                                                    borderRadius: 8, color: st.col,
+                                                                    fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em'
+                                                                }}>
                                                                     {st.icon} {active.category}
-                                                                </div>
-                                                                <div style={{ fontSize: 13, color: 'var(--text-3)', background: 'rgba(255,255,255,0.05)', padding: '6px 14px', borderRadius: 10, fontWeight: 500 }}>
+                                                                </span>
+                                                                <span style={{ fontSize: 12, color: 'var(--text-3)', background: 'rgba(255,255,255,0.05)', padding: '5px 12px', borderRadius: 8 }}>
                                                                     {active.date || 'Unknown Date'}
-                                                                </div>
+                                                                </span>
                                                             </div>
-                                                            <h2 style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.3, margin: '0 0 20px 0', letterSpacing: '-0.02em' }}>{active.subject}</h2>
-                                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', padding: '12px 20px', borderRadius: 12 }}>
-                                                                <span style={{ color: 'var(--text-3)', fontSize: 14 }}>From:</span>
-                                                                <span style={{ color: 'var(--cyan)', fontSize: 15, fontWeight: 500 }}>{active.from}</span>
+                                                            {/* Subject */}
+                                                            <h2 style={{
+                                                                fontSize: 'clamp(20px, 2.5vw, 28px)', fontWeight: 800,
+                                                                color: 'var(--text-1)', lineHeight: 1.3,
+                                                                margin: '0 0 16px 0', letterSpacing: '-0.02em',
+                                                                wordBreak: 'break-word'
+                                                            }}>
+                                                                {active.subject}
+                                                            </h2>
+                                                            {/* Sender */}
+                                                            <div style={{
+                                                                display: 'inline-flex', alignItems: 'center', gap: 8,
+                                                                background: 'rgba(0,0,0,0.28)', border: '1px solid rgba(255,255,255,0.1)',
+                                                                padding: '9px 16px', borderRadius: 10
+                                                            }}>
+                                                                <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>From:</span>
+                                                                <span style={{ fontSize: 14, color: '#00f5ff', fontWeight: 600, wordBreak: 'break-all' }}>{active.from}</span>
                                                             </div>
                                                         </div>
 
-                                                        <div style={{ width: 120, height: 120, borderRadius: 24, background: 'rgba(0,0,0,0.3)', border: `2px solid ${st.col}40`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 0 40px ${st.bg}` }}>
-                                                            <span style={{ fontSize: 12, color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: 4 }}>Risk Index</span>
-                                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                                                                <span style={{ fontSize: 42, fontWeight: 900, color: st.col }}>{active.risk_score}</span>
-                                                                <span style={{ fontSize: 16, color: st.col, fontWeight: 600 }}>%</span>
+                                                        {/* Risk Score Badge */}
+                                                        <div style={{
+                                                            width: 110, height: 110, borderRadius: 20,
+                                                            background: 'rgba(0,0,0,0.35)', border: `2px solid ${st.col}35`,
+                                                            display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                                            justifyContent: 'center', flexShrink: 0,
+                                                            boxShadow: `0 0 30px ${st.col}18`
+                                                        }}>
+                                                            <span style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: 4 }}>
+                                                                Risk Index
+                                                            </span>
+                                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                                                                <span style={{ fontSize: 38, fontWeight: 900, color: st.col, lineHeight: 1 }}>{active.risk_score}</span>
+                                                                <span style={{ fontSize: 15, color: st.col, fontWeight: 700 }}>%</span>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: 32, borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 40 }}>
-                                                        <h4 style={{ margin: '0 0 16px 0', fontSize: 13, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Raw Payload Snippet</h4>
-                                                        <p style={{ margin: 0, fontSize: 16, color: 'var(--text-2)', lineHeight: 1.8, fontStyle: 'italic', position: 'relative', paddingLeft: 24, borderLeft: '3px solid rgba(255,255,255,0.08)' }}>
-                                                            <span style={{ position: 'absolute', top: -10, left: -6, fontSize: 36, color: 'rgba(255,255,255,0.1)', lineHeight: 1 }}>"</span>
-                                                            {active.snippet}
+                                                    {/* Snippet */}
+                                                    <div style={{
+                                                        background: 'rgba(0,0,0,0.22)', padding: '22px 26px',
+                                                        borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)',
+                                                        marginBottom: 28
+                                                    }}>
+                                                        <h4 style={{ margin: '0 0 10px 0', fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
+                                                            Email Snippet
+                                                        </h4>
+                                                        <p style={{
+                                                            margin: 0, fontSize: 14, color: 'var(--text-2)', lineHeight: 1.75,
+                                                            fontStyle: 'italic', borderLeft: '3px solid rgba(255,255,255,0.1)',
+                                                            paddingLeft: 16
+                                                        }}>
+                                                            {active.snippet || 'No snippet available.'}
                                                         </p>
                                                     </div>
 
-                                                    <h4 style={{ margin: '0 0 20px 0', fontSize: 13, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>AI Neural Engine Analysis</h4>
+                                                    {/* AI Analysis Section */}
+                                                    <h4 style={{ margin: '0 0 16px 0', fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
+                                                        AI Neural Engine Analysis
+                                                    </h4>
 
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, padding: '28px', background: active.category === 'Scam' || active.category === 'Spam' ? st.bg : 'rgba(0,245,255,0.03)', borderRadius: 16, border: `1px solid ${active.category === 'Scam' || active.category === 'Spam' ? st.col + '40' : 'rgba(0,245,255,0.15)'}` }}>
-                                                            {active.category === 'Scam' || active.category === 'Spam' || active.risk_score >= 80 ? <ShieldAlert size={28} color={st.col} style={{ flexShrink: 0, marginTop: 2 }} /> : <CheckCircle2 size={28} color="var(--cyan)" style={{ flexShrink: 0, marginTop: 2 }} />}
-                                                            <div style={{ fontSize: 16, color: 'var(--text-1)', lineHeight: 1.7 }}>
-                                                                <span style={{ color: active.category === 'Scam' || active.category === 'Spam' || active.risk_score >= 80 ? st.col : 'var(--cyan)', fontWeight: 800, marginRight: 8, display: 'block', marginBottom: 8, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Threat Engine Breakdown:</span>
-                                                                <span style={{ color: 'var(--text-2)', fontWeight: 400 }}>{active.reason}</span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                                        {/* Reason */}
+                                                        <div style={{
+                                                            display: 'flex', alignItems: 'flex-start', gap: 16, padding: '22px 24px',
+                                                            background: active.risk_score >= 70 ? st.bg : 'rgba(0,245,255,0.04)',
+                                                            borderRadius: 14,
+                                                            border: `1px solid ${active.risk_score >= 70 ? st.col + '40' : 'rgba(0,245,255,0.15)'}`
+                                                        }}>
+                                                            {active.risk_score >= 70
+                                                                ? <ShieldAlert size={24} color={st.col} style={{ flexShrink: 0, marginTop: 1 }} />
+                                                                : <CheckCircle2 size={24} color="#00f5ff" style={{ flexShrink: 0, marginTop: 1 }} />
+                                                            }
+                                                            <div>
+                                                                <div style={{
+                                                                    fontSize: 11, fontWeight: 800, textTransform: 'uppercase',
+                                                                    letterSpacing: '0.07em', marginBottom: 8,
+                                                                    color: active.risk_score >= 70 ? st.col : '#00f5ff'
+                                                                }}>
+                                                                    Threat Engine Breakdown
+                                                                </div>
+                                                                <p style={{ margin: 0, fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7 }}>
+                                                                    {active.reason}
+                                                                </p>
                                                             </div>
                                                         </div>
 
-                                                        <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-                                                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 16, padding: '20px 24px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                                                <Zap size={24} color={st.col} />
+                                                        {/* Action + Links Row */}
+                                                        <div style={{ display: 'grid', gridTemplateColumns: active.links_found > 0 ? '1fr 1fr' : '1fr', gap: 14 }}>
+                                                            <div style={{
+                                                                display: 'flex', alignItems: 'center', gap: 14,
+                                                                padding: '18px 20px', borderRadius: 14,
+                                                                background: 'rgba(255,255,255,0.03)',
+                                                                border: '1px solid rgba(255,255,255,0.08)'
+                                                            }}>
+                                                                <Zap size={22} color={st.col} style={{ flexShrink: 0 }} />
                                                                 <div>
-                                                                    <div style={{ fontSize: 12, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4, fontWeight: 600 }}>Recommended Defense Action</div>
-                                                                    <div style={{ fontSize: 18, color: 'var(--text-1)', fontWeight: 700 }}>{active.action || 'No Action Needed'}</div>
+                                                                    <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 4 }}>
+                                                                        Recommended Action
+                                                                    </div>
+                                                                    <div style={{ fontSize: 16, color: 'var(--text-1)', fontWeight: 700 }}>
+                                                                        {active.action || 'No Action Needed'}
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            {(active.links_found > 0) && (
-                                                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 16, padding: '20px 24px', borderRadius: 16, background: 'rgba(255,120,50,0.1)', border: '1px solid rgba(255,120,50,0.2)' }}>
-                                                                    <Link size={24} color="#ff7832" />
+                                                            {active.links_found > 0 && (
+                                                                <div style={{
+                                                                    display: 'flex', alignItems: 'center', gap: 14,
+                                                                    padding: '18px 20px', borderRadius: 14,
+                                                                    background: 'rgba(255,120,50,0.08)',
+                                                                    border: '1px solid rgba(255,120,50,0.25)'
+                                                                }}>
+                                                                    <Link size={22} color="#ff7832" style={{ flexShrink: 0 }} />
                                                                     <div>
-                                                                        <div style={{ fontSize: 12, color: '#ff7832', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.9, marginBottom: 4, fontWeight: 600 }}>Threat Vectors Detected</div>
-                                                                        <div style={{ fontSize: 18, color: '#ff7832', fontWeight: 700 }}>{active.links_found} Malicious Links Blocker</div>
+                                                                        <div style={{ fontSize: 10, color: '#ff7832', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 4 }}>
+                                                                            Threat Vectors
+                                                                        </div>
+                                                                        <div style={{ fontSize: 16, color: '#ff7832', fontWeight: 700 }}>
+                                                                            {active.links_found} Suspicious Link{active.links_found > 1 ? 's' : ''} Detected
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             )}
                                                         </div>
                                                     </div>
-
                                                 </motion.div>
                                             </AnimatePresence>
                                         );
@@ -387,28 +727,47 @@ const InboxScannerContent = () => {
                         </motion.div>
                     )}
 
+                    {/* ─── Step: Complete — Empty Inbox ─── */}
                     {step === 'complete' && emails.length === 0 && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="premium-glass" style={{ textAlign: 'center', padding: '80px 40px', borderRadius: 24, border: '1px dashed rgba(255,255,255,0.15)', maxWidth: 600, margin: '0 auto' }}>
-                            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                                <Inbox size={32} color="var(--text-3)" />
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            className="premium-glass"
+                            style={{
+                                textAlign: 'center', padding: '72px 40px',
+                                borderRadius: 24, border: '1px dashed rgba(255,255,255,0.12)',
+                                maxWidth: 560, margin: '0 auto'
+                            }}
+                        >
+                            <div style={{
+                                width: 60, height: 60, borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.04)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                margin: '0 auto 18px'
+                            }}>
+                                <Inbox size={28} color="var(--text-3)" />
                             </div>
-                            <h3 style={{ fontSize: 20, marginBottom: 10 }}>No recent emails found via API</h3>
-                            <p style={{ color: 'var(--text-3)', fontSize: 15, maxWidth: 300, margin: '0 auto', marginBottom: 30 }}>Payload extraction resulted in 0 readable components.</p>
-                            <button className="btn-ghost" onClick={() => { setStep('provider'); setCredentials({ email: '', password: '', imap_server: '', is_oauth: false }); setEmails([]); setAgreed(false); }} style={{ fontSize: 14, padding: '10px 20px', borderRadius: 12, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                Close Session
+                            <h3 style={{ fontSize: 20, marginBottom: 10, fontWeight: 700 }}>No Emails Found</h3>
+                            <p style={{ color: 'var(--text-3)', fontSize: 14, maxWidth: 300, margin: '0 auto 28px', lineHeight: 1.6 }}>
+                                Your inbox returned 0 readable messages. This may be a permission or API scope issue.
+                            </p>
+                            <button
+                                className="btn-ghost" onClick={resetSession}
+                                style={{ fontSize: 13, padding: '10px 22px', borderRadius: 10, borderColor: 'rgba(255,255,255,0.1)' }}
+                            >
+                                Start Over
                             </button>
                         </motion.div>
                     )}
+
                 </AnimatePresence>
             </div>
         </section>
     );
-}
+};
 
+/* ─── Wrapped Export ─────────────────────────────────────────────────────── */
 export default function InboxScanner() {
-    /* Hardcoding Google Client ID to remove .env dependency */
     const CLIENT_ID = "959307556734-bs9vcm29194c97hvjg4uf1olhdi6c4ba.apps.googleusercontent.com";
-
     return (
         <GoogleOAuthProvider clientId={CLIENT_ID}>
             <InboxScannerContent />
