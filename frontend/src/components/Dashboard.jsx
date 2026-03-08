@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import { BarChart2, ShieldAlert, ShieldCheck, Activity, Database, TrendingUp, Cpu, HardDrive } from 'lucide-react';
 
-const API = 'https://all-safe-final-j8mc.onrender.com';
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 const itemV = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 14 } } };
 const stagger = { hidden: {}, show: { transition: { staggerChildren: .1, delayChildren: .2 } } };

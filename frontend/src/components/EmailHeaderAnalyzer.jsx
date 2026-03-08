@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Check, X, AlertTriangle, Shield, Zap, Copy, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
 import axios from 'axios';
 
-const API = 'https://all-safe-final-j8mc.onrender.com';
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 function parseHeaders(raw) {
     const lines = raw.split('\n');

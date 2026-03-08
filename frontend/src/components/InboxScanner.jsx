@@ -8,7 +8,7 @@ import {
 import { toast } from './Toast';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
-const API = 'https://all-safe-final-j8mc.onrender.com';
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 /* ─── Icon Components ───────────────────────────────────────────────────── */
 const GoogleIcon = () => (

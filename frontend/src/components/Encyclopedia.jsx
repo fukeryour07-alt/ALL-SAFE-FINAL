@@ -35,7 +35,8 @@ export default function Encyclopedia() {
         setAiData('');
 
         try {
-            const res = await axios.post('https://all-safe-final-j8mc.onrender.com/scan/threat-info', {
+            const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
+            const res = await axios.post(`${API}/scan/threat-info`, {
                 threat: threat.title
             });
             setAiData(res.data.ai_summary || 'Error retrieving data.');

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from './Toast';
 
-const API = 'https://all-safe-final-j8mc.onrender.com';
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 const MODES = [
     { id: 'url', icon: Link2, label: 'URL Scan', ph: 'https://example.com' },

@@ -9,7 +9,7 @@ import {
     Cpu, Terminal, SquarePen,
 } from 'lucide-react';
 
-const API = 'https://all-safe-final-j8mc.onrender.com';
+const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 /* ── Internal model (NOT user-facing) ── */
 const MODEL_ID = 'gemini';
