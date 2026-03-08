@@ -228,6 +228,15 @@ export default function LiveMap() {
         }
     }, [isGlobeReady]);
 
+    // ── Efficient real-time data ingestion for 3D Globe ──────────────────────────
+    // Because react-globe.gl handles mutating prop arrays natively using ThreeJS without
+    // needing full React renders, we pass the data arrays directly to the ref when they update.
+    useEffect(() => {
+        if (!globeRef.current) return;
+        globeRef.current.arcsData(arcsData);
+        globeRef.current.ringsData(ringsData);
+    }, [arcsData, ringsData]);
+
     // ── Responsive resize ─────────────────────────────────────────────────────
     useEffect(() => {
         const update = () => {
@@ -249,7 +258,11 @@ export default function LiveMap() {
         let reconnectTimeout;
 
         const connect = () => {
-            ws = new WebSocket(`ws://${window.location.hostname}:8000/ws/threats`);
+            // Dynamically resolve WebSocket URL from VITE_API_URL or fallback to localhost
+            let backendUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
+            let wsUrl = backendUrl.replace(/^http(s)?:\/\//, 'ws$1://') + '/ws/threats';
+
+            ws = new WebSocket(wsUrl);
 
             ws.onopen = () => setIsConnected(true);
             ws.onclose = () => {
@@ -513,7 +526,7 @@ export default function LiveMap() {
                                     ringPropagationSpeed={d => d.speed ?? 2}
                                     ringRepeatPeriod={d => d.repeat ?? 800}
                                 />
-                            ), [dimensions.width, dimensions.height, countriesData, arcsData, ringsData])}
+                            ), [dimensions.width, dimensions.height, countriesData])}
                         </div>
                     </div>
 
