@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from './Toast';
 
-const API = 'http://localhost:8000';
+const API = 'https://all-safe-final-j8mc.onrender.com';
 
 const SCAM_INDICATORS = [
     { id: 'upfront_payment', label: 'Asks for upfront payment / registration fee', weight: 25 },

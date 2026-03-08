@@ -4,7 +4,7 @@ import { Mail, KeyRound, ShieldCheck, ShieldAlert, AlertTriangle, EyeOff, Eye, L
 import { toast } from './Toast';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
-const API = 'http://localhost:8000';
+const API = 'https://all-safe-final-j8mc.onrender.com';
 
 const GoogleIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

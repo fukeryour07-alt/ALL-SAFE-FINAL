@@ -9,7 +9,7 @@ import {
     Cpu, Terminal, SquarePen,
 } from 'lucide-react';
 
-const API = 'http://localhost:8000';
+const API = 'https://all-safe-final-j8mc.onrender.com';
 
 /* ── Internal model (NOT user-facing) ── */
 const MODEL_ID = 'gemini';
@@ -554,7 +554,7 @@ export default function Chatbot() {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 11.5, fontWeight: 700, color: statusColor }}>{backendOk === null ? 'Connecting…' : backendOk ? 'AI Ready' : 'AI Offline'}</div>
-                                        <div style={{ fontSize: 9, color: '#334155' }}>localhost:8000</div>
+                                        <div style={{ fontSize: 9, color: '#334155' }}>all-safe-final-j8mc.onrender.com</div>
                                     </div>
                                     {backendOk === true && (
                                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00ff88', display: 'inline-block', animation: 'pulse-dot 2s ease-out infinite', flexShrink: 0 }} />

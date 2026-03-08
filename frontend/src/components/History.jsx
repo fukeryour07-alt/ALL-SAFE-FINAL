@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { Clock, RefreshCw, Loader2, Trash2 } from 'lucide-react';
 
-const API = 'http://localhost:8000';
+const API = 'https://all-safe-final-j8mc.onrender.com';
 
 const RISK_COLORS = {
     CLEAN: 'var(--green)', LOW: '#ffb830', MEDIUM: '#ff7832', HIGH: 'var(--red)', UNKNOWN: 'var(--text-3)',

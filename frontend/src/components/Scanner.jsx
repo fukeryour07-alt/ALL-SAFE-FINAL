@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from './Toast';
 
-const API = 'http://localhost:8000';
+const API = 'https://all-safe-final-j8mc.onrender.com';
 
 const MODES = [
     { id: 'url', icon: Link2, label: 'URL Scan', ph: 'https://example.com' },
