@@ -26,8 +26,8 @@ async def get_email_classification_chunk(emails_chunk):
     prompt = (
         "You are an Advanced Email Security AI.\n"
         "Analyze the following list of recent emails. For each email, determine if it is 'Scam', 'Spam', 'Company', 'Personal', or 'Newsletter'.\n"
-        "Assign a risk score (0-100), where 100 means high probability of phishing/scam/malware.\n"
-        "Also determine a 'recommended_action' (e.g., 'Quarantine', 'Block Sender', 'Delete Immediately', 'Safe to Read').\n"
+        "Assign a 'risk_score' (0-100), where 100 means high probability of phishing/scam/malware.\n"
+        "Also determine an 'action' (e.g., 'Quarantine', 'Block Sender', 'Delete Immediately', 'Safe to Read').\n"
         "Count the number of suspicious/malicious links found in the snippet and return as 'links_found' (integer).\n"
         "Return ONLY a valid JSON array of objects, corresponding EXACTLY to the input IDs.\n"
         "Format: [{\"id\": 1, \"category\": \"Company\", \"risk_score\": 5, \"reason\": \"Looks safe.\", \"action\": \"Safe to Read\", \"links_found\": 0}...]\n\n"
@@ -35,24 +35,34 @@ async def get_email_classification_chunk(emails_chunk):
     )
     
     def _call_ai():
+        def _parse_res(text):
+            # Clean markdown codeblocks
+            text = text.strip()
+            if text.startswith('```json'): text = text[7:]
+            elif text.startswith('```'): text = text[3:]
+            if text.endswith('```'): text = text[:-3]
+            return json.loads(text.strip())
+
         if gemini_client:
             try:
                 r = gemini_client.models.generate_content(model=ACTIVE_GEMINI_MODEL, contents=prompt)
-                raw = re.sub(r"^```(?:json)?|```$", "", r.text.strip()).strip()
-                return json.loads(raw)
-            except: pass
+                return _parse_res(r.text)
+            except Exception as e:
+                print(f"[Inbox AI] Gemini failed: {e}")
             
         if groq_client:
             try:
                 c = groq_client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.3
+                    temperature=0.2,
+                    response_format={"type": "json_object"} if False else None # Optional if prompt enforces it well
                 )
-                raw = re.sub(r"^```(?:json)?|```$", "", c.choices[0].message.content.strip()).strip()
-                return json.loads(raw)
-            except: pass
-        return [{"id": e["id"], "category": "Unknown", "risk_score": 50, "reason": "AI offline.", "action": "Manual Review", "links_found": 0} for e in emails_chunk]
+                return _parse_res(c.choices[0].message.content)
+            except Exception as e:
+                print(f"[Inbox AI] Groq failed: {e}")
+                
+        return [{"id": e["id"], "category": "Unknown", "risk_score": 50, "reason": "AI engines failed to classify.", "action": "Manual Review", "links_found": 0} for e in emails_chunk]
 
     return await asyncio.to_thread(_call_ai)
 

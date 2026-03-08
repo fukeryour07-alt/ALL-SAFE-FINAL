@@ -458,29 +458,32 @@ const InboxScannerContent = () => {
                         >
                             {/* Dashboard Toolbar */}
                             <div className="premium-glass" style={{
-                                padding: '20px 28px', marginBottom: 20,
+                                padding: '16px 24px', marginBottom: 24,
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                borderRadius: 18, gap: 16, flexWrap: 'wrap'
+                                borderRadius: 20, gap: 16, flexWrap: 'wrap',
+                                borderTop: '2px solid rgba(255,120,50,0.5)',
+                                background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.4) 100%)'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                                     <div style={{
-                                        width: 44, height: 44, borderRadius: 12,
-                                        background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        width: 48, height: 48, borderRadius: 14,
+                                        background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.4)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: '0 8px 20px rgba(124,58,237,0.15)'
                                     }}>
-                                        <Radar size={22} color="#a78bfa" />
+                                        <Radar size={24} color="#a78bfa" />
                                     </div>
                                     <div>
-                                        <h2 style={{ fontSize: 20, margin: 0, fontWeight: 700, letterSpacing: '-0.01em' }}>AI Threat Dashboard</h2>
-                                        <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 6px #00ff88', display: 'inline-block' }} />
-                                            Stream Analyzed · {emails.length} emails
+                                        <h2 style={{ fontSize: 22, margin: 0, fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--text-1)' }}>Neural Threat Dashboard</h2>
+                                        <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 8px #00ff88', display: 'inline-block' }} />
+                                            Active Stream · {emails.length} emails parsed
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Stats Row */}
-                                <div style={{ display: 'flex', gap: 20, background: 'rgba(0,0,0,0.2)', padding: '10px 22px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)' }}>
+                                <div style={{ display: 'flex', gap: 24, padding: '10px 16px', borderRadius: 16 }}>
                                     {[
                                         { label: 'TOTAL', value: emails.length, color: 'var(--text-1)' },
                                         { label: 'SCAM', value: scamCount, color: '#ff2e5b' },
@@ -489,29 +492,29 @@ const InboxScannerContent = () => {
                                         { label: 'LINKS', value: totalLinks, color: '#ff7832' },
                                         { label: 'AVG RISK', value: `${averageRisk}%`, color: averageRisk > 50 ? '#ff2e5b' : 'var(--text-1)' },
                                     ].map(stat => (
-                                        <div key={stat.label} style={{ textAlign: 'center', minWidth: 40 }}>
-                                            <div style={{ fontSize: 10, color: stat.color, letterSpacing: '0.07em', fontWeight: 700, marginBottom: 3 }}>{stat.label}</div>
-                                            <div style={{ fontSize: 18, fontWeight: 800, color: stat.color }}>{stat.value}</div>
+                                        <div key={stat.label} style={{ textAlign: 'center', minWidth: 48 }}>
+                                            <div style={{ fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.08em', fontWeight: 700, marginBottom: 4 }}>{stat.label}</div>
+                                            <div style={{ fontSize: 20, fontWeight: 800, color: stat.color }}>{stat.value}</div>
                                         </div>
                                     ))}
                                 </div>
 
                                 <button
                                     className="btn-ghost" onClick={resetSession}
-                                    style={{ fontSize: 13, padding: '10px 20px', borderRadius: 10, borderColor: 'rgba(255,255,255,0.12)', whiteSpace: 'nowrap' }}
+                                    style={{ fontSize: 13, padding: '10px 20px', borderRadius: 12, borderColor: 'rgba(255,255,255,0.2)', whiteSpace: 'nowrap', fontWeight: 600 }}
                                 >
                                     End Session
                                 </button>
                             </div>
 
                             {/* Split Pane */}
-                            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
 
                                 {/* Left: Email List */}
                                 <div style={{
-                                    flex: '0 0 360px', display: 'flex', flexDirection: 'column', gap: 8,
-                                    height: 'calc(100vh - 280px)', overflowY: 'auto',
-                                    paddingRight: 6, scrollbarWidth: 'thin'
+                                    flex: '0 0 380px', display: 'flex', flexDirection: 'column', gap: 10,
+                                    height: 'calc(100vh - 270px)', overflowY: 'auto',
+                                    paddingRight: 8, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
                                 }}>
                                     {emails.map((email, idx) => {
                                         const st = getCategoryStyles(email.category, email.risk_score);
